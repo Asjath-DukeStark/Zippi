@@ -1,0 +1,186 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --color-brand-yellow: #F5C518;
+  --color-brand-yellow-hover: #E0B000;
+  --color-brand-yellow-light: #FFFBEA;
+  --color-brand-blue: #1565C0;
+  --color-brand-blue-hover: #0D47A1;
+  --color-brand-blue-light: #E8F0FE;
+  --color-brand-red: #E53935;
+  --color-brand-green: #2E7D32;
+  --color-brand-green-light: #E8F5E9;
+  --color-brand-charcoal: #1A1A1A;
+  --color-brand-gray: #888888;
+  --color-brand-gray-light: #EEEEEE;
+  --color-brand-gray-mid: #DDDDDD;
+}
+
+/* Custom scrollbars for category list and general UI boxes */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #DDDDDD;
+  border-radius: 99px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #CCCCCC;
+}
+
+/* Safe viewport wrappers for mobile-first experience */
+body {
+  background-color: #F5F5F5;
+  color: #1A1A1A;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* Base style overrides */
+button {
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* Utility to completely hide scrollbars */
+.scrollbar-none::-webkit-scrollbar {
+  display: none !important;
+}
+.scrollbar-none {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
+}
+
+input, select, textarea {
+  font-family: inherit;
+  outline: none;
+}
+
+/* ═════════ INFINITE MARQUEE ANIMATIONS ═════════ */
+.marquee-container {
+  overflow: hidden;
+  width: 100%;
+  display: flex;
+}
+
+@keyframes marqueeLeft {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
+}
+
+@keyframes marqueeRight {
+  0% { transform: translate3d(-50%, 0, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
+.marquee-track-rtl-s1 {
+  display: flex;
+  gap: 12px;
+  width: max-content;
+  animation: marqueeLeft 42s linear infinite;
+  will-change: transform;
+}
+
+.marquee-track-rtl-s2 {
+  display: flex;
+  gap: 12px;
+  width: max-content;
+  animation: marqueeLeft 48s linear infinite;
+  will-change: transform;
+}
+
+.marquee-track-ltr {
+  display: flex;
+  gap: 12px;
+  width: max-content;
+  animation: marqueeRight 48s linear infinite;
+  will-change: transform;
+}
+
+.marquee-track-rtl-flash {
+  display: flex;
+  gap: 12px;
+  width: max-content;
+  animation: marqueeLeft 35s linear infinite;
+  will-change: transform;
+}
+
+/* Pause play-state states */
+.marquee-track-rtl-s1:hover,
+.marquee-track-rtl-s1:active,
+.marquee-track-rtl-s1:focus-within,
+.marquee-track-rtl-s2:hover,
+.marquee-track-rtl-s2:active,
+.marquee-track-rtl-s2:focus-within,
+.marquee-track-ltr:hover,
+.marquee-track-ltr:active,
+.marquee-track-ltr:focus-within,
+.marquee-track-rtl-flash:hover,
+.marquee-track-rtl-flash:active,
+.marquee-track-rtl-flash:focus-within {
+  animation-play-state: paused !important;
+}
+
+/* ═════════ HERO BANNER CAROUSEL TRANSITIONS ═════════ */
+.slide {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.6s ease;
+  opacity: 0;
+  transform: translateX(100%);
+  pointer-events: none;
+}
+
+/* Current slide exits left */
+.slide.exiting {
+  transform: translateX(-100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Next slide enters from right */
+.slide.entering {
+  transform: translateX(100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Active slide — centered */
+.slide.active {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* DOT INDICATORS STYLE */
+.carousel-dot {
+  width: 6px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 999px;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.carousel-dot.active-dot {
+  width: 20px;
+  height: 6px;
+  background: #F5C518;
+  border-radius: 999px;
+  transition: all 0.3s ease;
+}
+
+
