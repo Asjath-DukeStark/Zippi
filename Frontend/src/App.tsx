@@ -53,6 +53,7 @@ import { ZippiBottomNav } from './components/ZippiLibrary';
 import FilterBottomSheet from './components/FilterBottomSheet';
 import ZippiSplashScreen from './components/ZippiSplashScreen';
 import FlashDealsTimer from './components/FlashDealsTimer';
+import ZippiProductImage, { ZippiCategoryImage } from './components/ZippiProductImage';
 
 const DEALS_OPTIONS = [
   "Grand Lifestyle Sale",
@@ -80,34 +81,34 @@ const BRANDS_OPTIONS = [
 ];
 
 const HOME_CATEGORIES = [
-  { id: 'veggies', name: 'Fresh Produce', emoji: '🥦', image: 'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=150&auto=format&fit=crop&q=80', sale: true },
-  { id: 'dairy', name: 'Dairy & Eggs', emoji: '🥛', image: 'https://images.unsplash.com/photo-1516448620398-c5f44bf9f441?w=150&auto=format&fit=crop&q=80', sale: false },
-  { id: 'meats', name: 'Meat & Seafood', emoji: '🥩', image: 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=150&auto=format&fit=crop&q=80', sale: false },
-  { id: 'bakery', name: 'Bakery', emoji: '🍞', image: 'https://images.unsplash.com/photo-1549931319-a545dcf3bc73?w=150&auto=format&fit=crop&q=80', sale: false },
-  { id: 'beverages', name: 'Beverages', emoji: '🧃', image: 'https://images.unsplash.com/photo-1541167760496-1628856ab772?w=150&auto=format&fit=crop&q=80', sale: false },
-  { id: 'snacks', name: 'Snacks', emoji: '🍿', image: 'https://images.unsplash.com/photo-1511125341079-05a909dd6802?w=150&auto=format&fit=crop&q=80', sale: false },
-  { id: 'frozen', name: 'Frozen', emoji: '❄️', image: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=150&auto=format&fit=crop&q=80', sale: true },
-  { id: 'cleaning', name: 'Cleaning', emoji: '🧹', image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=150&auto=format&fit=crop&q=80', sale: false },
+  { id: 'veggies', name: 'Fresh Produce', emoji: '🥦', image: '/category-veggies.png', sale: true },
+  { id: 'dairy', name: 'Dairy & Eggs', emoji: '🥛', image: '/category-dairy.png', sale: false },
+  { id: 'meats', name: 'Meat & Seafood', emoji: '🥩', image: '/category-meats.png', sale: false },
+  { id: 'bakery', name: 'Bakery', emoji: '🍞', image: '/category-bakery.png', sale: false },
+  { id: 'beverages', name: 'Beverages', emoji: '🧃', image: '/category-beverages.png', sale: false },
+  { id: 'snacks', name: 'Snacks', emoji: '🍿', image: '/category-snacks.png', sale: false },
+  { id: 'frozen', name: 'Frozen', emoji: '❄️', image: '/category-frozen.png', sale: true },
+  { id: 'cleaning', name: 'Cleaning', emoji: '🧹', image: '/category-cleaning.png', sale: false },
 ];
 
 const BRANDS_LIST = ['All', 'Kotmale', 'Pelwatte', 'Araliya', 'Dilmah'];
 
 const DETAILED_CATEGORIES = [
-  { id: 'veggies', name: 'Fresh Produce', image: 'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=300&auto=format&fit=crop&q=80' },
-  { id: 'dairy', name: 'Dairy & Eggs', image: 'https://images.unsplash.com/photo-1516448620398-c5f44bf9f441?w=300&auto=format&fit=crop&q=80' },
-  { id: 'meats', name: 'Meat & Seafood', image: 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=300&auto=format&fit=crop&q=80' },
-  { id: 'bakery', name: 'Bakery & Bread', image: 'https://images.unsplash.com/photo-1549931319-a545dcf3bc73?w=300&auto=format&fit=crop&q=80' },
-  { id: 'beverages', name: 'Beverages', image: 'https://images.unsplash.com/photo-1541167760496-1628856ab772?w=300&auto=format&fit=crop&q=80' },
-  { id: 'snacks', name: 'Snacks & Chips', image: 'https://images.unsplash.com/photo-1511125341079-05a909dd6802?w=300&auto=format&fit=crop&q=80' },
-  { id: 'frozen', name: 'Frozen Foods', image: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=300&auto=format&fit=crop&q=80' },
-  { id: 'cleaning', name: 'Cleaning & Home', image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=300&auto=format&fit=crop&q=80' },
-  { id: 'personal', name: 'Personal Care', image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=300&auto=format&fit=crop&q=80' },
-  { id: 'baby', name: 'Baby & Kids', image: 'https://images.unsplash.com/photo-1515488042361-404e9250afef?w=300&auto=format&fit=crop&q=80' },
-  { id: 'breakfast', name: 'Breakfast', image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=300&auto=format&fit=crop&q=80' },
-  { id: 'canned', name: 'Canned & Dry Goods', image: 'https://images.unsplash.com/photo-1536640712247-c57530c1737e?w=300&auto=format&fit=crop&q=80' },
-  { id: 'pantry', name: 'Oils & Condiments', image: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=300&auto=format&fit=crop&q=80' },
-  { id: 'sweets', name: 'Sweets & Chocolates', image: 'https://images.unsplash.com/photo-1511381939415-e44015466834?w=300&auto=format&fit=crop&q=80' },
-  { id: 'health', name: 'Health Foods', image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=300&auto=format&fit=crop&q=80' }
+  { id: 'veggies', name: 'Fresh Produce', image: '/category-veggies.png' },
+  { id: 'dairy', name: 'Dairy & Eggs', image: '/category-dairy.png' },
+  { id: 'meats', name: 'Meat & Seafood', image: '/category-meats.png' },
+  { id: 'bakery', name: 'Bakery & Bread', image: '/category-bakery.png' },
+  { id: 'beverages', name: 'Beverages', image: '/category-beverages.png' },
+  { id: 'snacks', name: 'Snacks & Chips', image: '/category-snacks.png' },
+  { id: 'frozen', name: 'Frozen Foods', image: '/category-frozen.png' },
+  { id: 'cleaning', name: 'Cleaning & Home', image: '/category-cleaning.png' },
+  { id: 'personal', name: 'Personal Care', image: '/category-personal.png' },
+  { id: 'baby', name: 'Baby & Kids', image: '/category-baby.png' },
+  { id: 'breakfast', name: 'Breakfast', image: '/category-breakfast.png' },
+  { id: 'canned', name: 'Canned & Dry Goods', image: '/category-canned.png' },
+  { id: 'pantry', name: 'Oils & Condiments', image: '/category-pantry.png' },
+  { id: 'sweets', name: 'Sweets & Chocolates', image: '/category-sweets.png' },
+  { id: 'health', name: 'Health Foods', image: '/category-health.png' }
 ];
 
 // Define list of IDs for home marquee sections
@@ -951,11 +952,12 @@ export default function App() {
                           
                           {/* Category Image - top 70% of card */}
                           <div className="w-full h-[65%] rounded-lg overflow-hidden bg-gray-50/50 flex items-center justify-center p-1 relative">
-                            <img 
-                              src={cat.image} 
-                              alt={cat.name} 
-                              className="object-contain w-full h-full max-h-[48px] transform hover:scale-110 transition-transform"
-                              referrerPolicy="no-referrer"
+                            <ZippiCategoryImage 
+                              image={cat.image} 
+                              name={cat.name} 
+                              id={cat.id}
+                              imageClassName="object-contain w-full h-full max-h-[48px] transform hover:scale-110 transition-transform"
+                              emojiClassName="text-2xl"
                             />
                             <span className="absolute bottom-0.5 right-0.5 text-[10px] select-none">{cat.emoji}</span>
                           </div>
@@ -1201,11 +1203,12 @@ export default function App() {
                   >
                     {/* Product image fills top 70% of card (object-fit: contain) */}
                     <div className="w-full h-[70%] flex items-center justify-center overflow-hidden">
-                      <img 
-                        src={cat.image} 
-                        alt={cat.name} 
-                        className="w-full h-full object-contain max-h-[64px] transition-transform duration-300 hover:scale-110" 
-                        referrerPolicy="no-referrer"
+                      <ZippiCategoryImage 
+                        image={cat.image} 
+                        name={cat.name} 
+                        id={cat.id}
+                        imageClassName="w-full h-full object-contain max-h-[64px] transition-transform duration-300 hover:scale-110" 
+                        emojiClassName="text-4xl"
                       />
                     </div>
                     {/* Category name below image (14px, bold, dark) */}
@@ -2290,7 +2293,14 @@ export default function App() {
                   {PRODUCTS.filter(p => wishlist.includes(p.id)).map(p => (
                     <div key={p.id} className="p-3 bg-gray-50 rounded-xl border border-gray-150 flex justify-between items-center gap-2">
                       <div className="flex items-center gap-2.5">
-                        <img src={p.image} className="w-10 h-10 object-contain" alt={p.name} referrerPolicy="no-referrer" />
+                        <ZippiProductImage 
+                          image={p.image} 
+                          name={p.name} 
+                          category={p.category}
+                          className="w-10 h-10 shrink-0"
+                          imageClassName="w-10 h-10 object-contain rounded-lg bg-white"
+                          fallbackSize="xs"
+                        />
                         <div>
                           <h4 className="font-bold text-xs text-[#1A1A1A] line-clamp-1">{p.name}</h4>
                           <span className="text-[10px] text-gray-400">{p.unit} • LKR {p.price}</span>

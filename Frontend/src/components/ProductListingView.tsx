@@ -48,21 +48,21 @@ interface ProductListingViewProps {
 }
 
 const DETAILED_CATEGORIES_LOCAL = [
-  { id: 'veggies', name: 'Fresh Produce', image: 'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=300&auto=format&fit=crop&q=80' },
-  { id: 'dairy', name: 'Dairy & Eggs', image: 'https://images.unsplash.com/photo-1516448620398-c5f44bf9f441?w=300&auto=format&fit=crop&q=80' },
-  { id: 'meats', name: 'Meat & Seafood', image: 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=300&auto=format&fit=crop&q=80' },
-  { id: 'bakery', name: 'Bakery & Bread', image: 'https://images.unsplash.com/photo-1549931319-a545dcf3bc73?w=300&auto=format&fit=crop&q=80' },
-  { id: 'beverages', name: 'Beverages', image: 'https://images.unsplash.com/photo-1541167760496-1628856ab772?w=300&auto=format&fit=crop&q=80' },
-  { id: 'snacks', name: 'Snacks & Chips', image: 'https://images.unsplash.com/photo-1511125341079-05a909dd6802?w=300&auto=format&fit=crop&q=80' },
-  { id: 'frozen', name: 'Frozen Foods', image: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=300&auto=format&fit=crop&q=80' },
-  { id: 'cleaning', name: 'Cleaning & Home', image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=300&auto=format&fit=crop&q=80' },
-  { id: 'personal', name: 'Personal Care', image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=300&auto=format&fit=crop&q=80' },
-  { id: 'baby', name: 'Baby & Kids', image: 'https://images.unsplash.com/photo-1515488042361-404e9250afef?w=300&auto=format&fit=crop&q=80' },
-  { id: 'breakfast', name: 'Breakfast', image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=300&auto=format&fit=crop&q=80' },
-  { id: 'canned', name: 'Canned & Dry Goods', image: 'https://images.unsplash.com/photo-1536640712247-c57530c1737e?w=300&auto=format&fit=crop&q=80' },
-  { id: 'pantry', name: 'Oils & Condiments', image: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=300&auto=format&fit=crop&q=80' },
-  { id: 'sweets', name: 'Sweets & Chocolates', image: 'https://images.unsplash.com/photo-1511381939415-e44015466834?w=300&auto=format&fit=crop&q=80' },
-  { id: 'health', name: 'Health Foods', image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=300&auto=format&fit=crop&q=80' }
+  { id: 'veggies', name: 'Fresh Produce', image: '/category-veggies.png' },
+  { id: 'dairy', name: 'Dairy & Eggs', image: '/category-dairy.png' },
+  { id: 'meats', name: 'Meat & Seafood', image: '/category-meats.png' },
+  { id: 'bakery', name: 'Bakery & Bread', image: '/category-bakery.png' },
+  { id: 'beverages', name: 'Beverages', image: '/category-beverages.png' },
+  { id: 'snacks', name: 'Snacks & Chips', image: '/category-snacks.png' },
+  { id: 'frozen', name: 'Frozen Foods', image: '/category-frozen.png' },
+  { id: 'cleaning', name: 'Cleaning & Home', image: '/category-cleaning.png' },
+  { id: 'personal', name: 'Personal Care', image: '/category-personal.png' },
+  { id: 'baby', name: 'Baby & Kids', image: '/category-baby.png' },
+  { id: 'breakfast', name: 'Breakfast', image: '/category-breakfast.png' },
+  { id: 'canned', name: 'Canned & Dry Goods', image: '/category-canned.png' },
+  { id: 'pantry', name: 'Oils & Condiments', image: '/category-pantry.png' },
+  { id: 'sweets', name: 'Sweets & Chocolates', image: '/category-sweets.png' },
+  { id: 'health', name: 'Health Foods', image: '/category-health.png' }
 ];
 
 const LOCAL_BRANDS = ['All', 'Kotmale', 'Pelwatte', 'Araliya', 'Dilmah', 'Harischandra'];

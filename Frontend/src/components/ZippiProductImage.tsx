@@ -117,3 +117,110 @@ export default function ZippiProductImage({
     </div>
   );
 }
+
+export function getCategoryFallbackDetails(idOrName: string) {
+  const id = idOrName.toLowerCase();
+  
+  // Default values
+  let emoji = '🛒';
+  let gradient = 'from-amber-100 to-amber-200 text-amber-700';
+
+  if (id.includes('veggie') || id.includes('produce') || id.includes('fruit') || id.includes('crop')) {
+    emoji = '🥦';
+    gradient = 'from-emerald-50 to-emerald-150 text-emerald-600';
+  } else if (id.includes('dairy') || id.includes('egg') || id.includes('milk')) {
+    emoji = '🥛';
+    gradient = 'from-blue-50 to-blue-150 text-blue-600';
+  } else if (id.includes('meat') || id.includes('seafood') || id.includes('fish')) {
+    emoji = '🥩';
+    gradient = 'from-red-50 to-red-150 text-red-600';
+  } else if (id.includes('bakery') || id.includes('bread')) {
+    emoji = '🍞';
+    gradient = 'from-orange-50 to-orange-150 text-amber-800';
+  } else if (id.includes('beverage') || id.includes('drink') || id.includes('soda')) {
+    emoji = '🥤';
+    gradient = 'from-cyan-50 to-cyan-150 text-cyan-600';
+  } else if (id.includes('snack') || id.includes('chip') || id.includes('sweet') || id.includes('chocolate') || id.includes('candy')) {
+    emoji = '🍿';
+    gradient = 'from-amber-50 to-amber-150 text-amber-700';
+  } else if (id.includes('frozen')) {
+    emoji = '❄️';
+    gradient = 'from-sky-50 to-sky-150 text-sky-600';
+  } else if (id.includes('cleaning') || id.includes('home') || id.includes('detergent')) {
+    emoji = '🧹';
+    gradient = 'from-violet-50 to-violet-150 text-violet-600';
+  } else if (id.includes('personal') || id.includes('care') || id.includes('health') || id.includes('hygiene')) {
+    emoji = '🧴';
+    gradient = 'from-teal-50 to-teal-150 text-teal-600';
+  } else if (id.includes('baby') || id.includes('kid') || id.includes('child')) {
+    emoji = '🧸';
+    gradient = 'from-pink-50 to-pink-150 text-pink-600';
+  } else if (id.includes('breakfast') || id.includes('cereal') || id.includes('oat')) {
+    emoji = '🥞';
+    gradient = 'from-amber-100 to-amber-250 text-amber-800';
+  } else if (id.includes('canned') || id.includes('dry') || id.includes('tin') || id.includes('pack')) {
+    emoji = '🥫';
+    gradient = 'from-rose-100 to-rose-200 text-rose-700';
+  } else if (id.includes('pantry') || id.includes('oil') || id.includes('condiment') || id.includes('spice')) {
+    emoji = '🫙';
+    gradient = 'from-amber-50 to-orange-100 text-amber-700';
+  } else if (id.includes('sweet') || id.includes('chocolate')) {
+    emoji = '🍫';
+    gradient = 'from-red-100 to-red-200 text-red-700';
+  }
+
+  return { emoji, gradient };
+}
+
+interface ZippiCategoryImageProps {
+  image: string;
+  name: string;
+  id?: string;
+  className?: string;
+  imageClassName?: string;
+  emojiClassName?: string;
+}
+
+export function ZippiCategoryImage({
+  image,
+  name,
+  id = '',
+  className = 'w-full h-full flex items-center justify-center',
+  imageClassName = 'object-contain w-full h-full',
+  emojiClassName = 'text-4xl'
+}: ZippiCategoryImageProps) {
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    setHasError(false);
+  }, [image]);
+
+  const fallback = useMemo(() => getCategoryFallbackDetails(id || name), [id, name]);
+
+  if (hasError || !image) {
+    return (
+      <div 
+        className={`${className} rounded-xl bg-gradient-to-tr ${fallback.gradient} flex flex-col items-center justify-center p-2 text-center select-none animate-fade-in`}
+        title={name}
+      >
+        <span className={`${emojiClassName} filter drop-shadow-sm leading-none`}>
+          {fallback.emoji}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className={className}>
+      <img
+        src={image}
+        alt={name}
+        referrerPolicy="no-referrer"
+        className={imageClassName}
+        loading="lazy"
+        onError={() => setHasError(true)}
+      />
+    </div>
+  );
+}
+
