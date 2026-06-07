@@ -1,7 +1,7 @@
 {
-  "installCommand": "npm install --prefix Frontend",
-  "buildCommand": "npm run build --prefix Frontend",
-  "outputDirectory": "Frontend/dist",
+  "installCommand": "npm install --prefix zippi-web",
+  "buildCommand": "npm run build --prefix zippi-web",
+  "outputDirectory": "zippi-web/dist",
   "cleanUrls": true,
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }

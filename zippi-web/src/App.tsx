@@ -165,10 +165,11 @@ export default function App() {
     let active = true;
     const loadBackendData = async () => {
       try {
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
         const [prodRes, catRes, bannerRes] = await Promise.all([
-          fetch('http://localhost:3001/api/products').then(res => res.json()),
-          fetch('http://localhost:3001/api/categories').then(res => res.json()),
-          fetch('http://localhost:3001/api/banners').then(res => res.json())
+          fetch(`${API_BASE_URL}/products`).then(res => res.json()),
+          fetch(`${API_BASE_URL}/categories`).then(res => res.json()),
+          fetch(`${API_BASE_URL}/banners`).then(res => res.json())
         ]);
         if (!active) return;
         const productsList = prodRes?.success && prodRes.data?.products ? prodRes.data.products : null;
@@ -568,9 +569,20 @@ export default function App() {
   const bestsellerProducts = products.filter(p => p.popular);
   const freshTodayProducts = products.filter(p => p.category === 'veggies' || p.category === 'fruits' || p.category === 'dairy');
 
-  const trendingProductsList = TRENDING_IDS.map(id => products.find(p => p.id === id)).filter((p): p is Product => !!p);
-  const freshProductsList = FRESH_IDS.map(id => products.find(p => p.id === id)).filter((p): p is Product => !!p);
-  const flashProductsList = FLASH_IDS.map(id => products.find(p => p.id === id)).filter((p): p is Product => !!p);
+  const trendingProductsMapped = TRENDING_IDS.map(id => products.find(p => p.id === id)).filter((p): p is Product => !!p);
+  const trendingProductsList = trendingProductsMapped.length > 0 
+    ? trendingProductsMapped 
+    : products.filter(p => p.popular).slice(0, 10);
+
+  const freshProductsMapped = FRESH_IDS.map(id => products.find(p => p.id === id)).filter((p): p is Product => !!p);
+  const freshProductsList = freshProductsMapped.length > 0 
+    ? freshProductsMapped 
+    : products.filter(p => p.category === 'veggies' || p.category === 'fruits' || p.category === 'dairy').slice(0, 10);
+
+  const flashProductsMapped = FLASH_IDS.map(id => products.find(p => p.id === id)).filter((p): p is Product => !!p);
+  const flashProductsList = flashProductsMapped.length > 0 
+    ? flashProductsMapped 
+    : products.filter(p => p.isFlashDeal || (p.discountPercent !== undefined && p.discountPercent > 0)).slice(0, 10);
 
   const cartTotalQty = cart.reduce((acc, i) => acc + i.quantity, 0);
   const cartSubtotal = cart.reduce((acc, i) => acc + (i.product.price * i.quantity), 0);
@@ -1050,35 +1062,23 @@ export default function App() {
                     </button>
                   </div>
 
-                  <div 
-                    className="marquee-container"
-                    onTouchStart={(e) => {
-                      const track = e.currentTarget.firstElementChild as HTMLElement;
-                      if (track) track.style.animationPlayState = 'paused';
-                    }}
-                    onTouchEnd={(e) => {
-                      const track = e.currentTarget.firstElementChild as HTMLElement;
-                      if (track) track.style.animationPlayState = 'running';
-                    }}
-                  >
-                    <div className="marquee-track-rtl-s1">
-                      {[...trendingProductsList, ...trendingProductsList].map((product, idx) => {
-                        const qty = cart.find(i => i.product.id === product.id)?.quantity || 0;
-                        return (
-                          <div className="w-[140px] shrink-0" key={`${product.id}-trend1-${idx}`}>
-                            <ProductCard
-                              product={product}
-                              cartQty={qty}
-                              onAddToCart={() => handleAddToCart(product)}
-                              onRemoveOne={() => handleRemoveOne(product)}
-                              onViewDetails={() => setActiveDetailProduct(product)}
-                              isWishlisted={wishlist.includes(product.id)}
-                              onToggleWishlist={() => handleToggleWishlist(product.id)}
-                            />
-                          </div>
-                        );
-                      })}
-                    </div>
+                  <div className="flex gap-3 overflow-x-auto px-4 pb-4 scrollbar-none scroll-smooth">
+                    {trendingProductsList.map((product) => {
+                      const qty = cart.find(i => i.product.id === product.id)?.quantity || 0;
+                      return (
+                        <div className="w-[140px] shrink-0" key={`${product.id}-trend1`}>
+                          <ProductCard
+                            product={product}
+                            cartQty={qty}
+                            onAddToCart={() => handleAddToCart(product)}
+                            onRemoveOne={() => handleRemoveOne(product)}
+                            onViewDetails={() => setActiveDetailProduct(product)}
+                            isWishlisted={wishlist.includes(product.id)}
+                            onToggleWishlist={() => handleToggleWishlist(product.id)}
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -1101,35 +1101,23 @@ export default function App() {
                     </button>
                   </div>
 
-                  <div 
-                    className="marquee-container"
-                    onTouchStart={(e) => {
-                      const track = e.currentTarget.firstElementChild as HTMLElement;
-                      if (track) track.style.animationPlayState = 'paused';
-                    }}
-                    onTouchEnd={(e) => {
-                      const track = e.currentTarget.firstElementChild as HTMLElement;
-                      if (track) track.style.animationPlayState = 'running';
-                    }}
-                  >
-                    <div className="marquee-track-ltr">
-                      {[...freshProductsList, ...freshProductsList].map((product, idx) => {
-                        const qty = cart.find(i => i.product.id === product.id)?.quantity || 0;
-                        return (
-                          <div className="w-[140px] shrink-0" key={`${product.id}-fresh-${idx}`}>
-                            <ProductCard
-                              product={product}
-                              cartQty={qty}
-                              onAddToCart={() => handleAddToCart(product)}
-                              onRemoveOne={() => handleRemoveOne(product)}
-                              onViewDetails={() => setActiveDetailProduct(product)}
-                              isWishlisted={wishlist.includes(product.id)}
-                              onToggleWishlist={() => handleToggleWishlist(product.id)}
-                            />
-                          </div>
-                        );
-                      })}
-                    </div>
+                  <div className="flex gap-3 overflow-x-auto px-4 pb-4 scrollbar-none scroll-smooth">
+                    {freshProductsList.map((product) => {
+                      const qty = cart.find(i => i.product.id === product.id)?.quantity || 0;
+                      return (
+                        <div className="w-[140px] shrink-0" key={`${product.id}-fresh`}>
+                          <ProductCard
+                            product={product}
+                            cartQty={qty}
+                            onAddToCart={() => handleAddToCart(product)}
+                            onRemoveOne={() => handleRemoveOne(product)}
+                            onViewDetails={() => setActiveDetailProduct(product)}
+                            isWishlisted={wishlist.includes(product.id)}
+                            onToggleWishlist={() => handleToggleWishlist(product.id)}
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -1155,36 +1143,24 @@ export default function App() {
                     </button>
                   </div>
 
-                  <div 
-                    className="marquee-container"
-                    onTouchStart={(e) => {
-                      const track = e.currentTarget.firstElementChild as HTMLElement;
-                      if (track) track.style.animationPlayState = 'paused';
-                    }}
-                    onTouchEnd={(e) => {
-                      const track = e.currentTarget.firstElementChild as HTMLElement;
-                      if (track) track.style.animationPlayState = 'running';
-                    }}
-                  >
-                    <div className="marquee-track-rtl-flash">
-                      {[...flashProductsList, ...flashProductsList].map((product, idx) => {
-                        const qty = cart.find(i => i.product.id === product.id)?.quantity || 0;
-                        return (
-                          <div className="w-[140px] shrink-0" key={`${product.id}-flash-${idx}`}>
-                            <ProductCard
-                              product={product}
-                              cartQty={qty}
-                              onAddToCart={() => handleAddToCart(product)}
-                              onRemoveOne={() => handleRemoveOne(product)}
-                              onViewDetails={() => setActiveDetailProduct(product)}
-                              isWishlisted={wishlist.includes(product.id)}
-                              onToggleWishlist={() => handleToggleWishlist(product.id)}
-                              isFlashDeal={true}
-                            />
-                          </div>
-                        );
-                      })}
-                    </div>
+                  <div className="flex gap-3 overflow-x-auto px-4 pb-4 scrollbar-none scroll-smooth">
+                    {flashProductsList.map((product) => {
+                      const qty = cart.find(i => i.product.id === product.id)?.quantity || 0;
+                      return (
+                        <div className="w-[140px] shrink-0" key={`${product.id}-flash`}>
+                          <ProductCard
+                            product={product}
+                            cartQty={qty}
+                            onAddToCart={() => handleAddToCart(product)}
+                            onRemoveOne={() => handleRemoveOne(product)}
+                            onViewDetails={() => setActiveDetailProduct(product)}
+                            isWishlisted={wishlist.includes(product.id)}
+                            onToggleWishlist={() => handleToggleWishlist(product.id)}
+                            isFlashDeal={true}
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
