@@ -171,8 +171,12 @@ export default function App() {
           fetch('http://localhost:3001/api/banners').then(res => res.json())
         ]);
         if (!active) return;
-        if (prodRes && Array.isArray(prodRes)) {
-          const mappedProducts = prodRes.map((p: any) => ({
+        const productsList = prodRes?.success && prodRes.data?.products ? prodRes.data.products : null;
+        const categoriesList = catRes?.success && Array.isArray(catRes.data) ? catRes.data : null;
+        const bannersList = bannerRes?.success && Array.isArray(bannerRes.data) ? bannerRes.data : null;
+
+        if (productsList && Array.isArray(productsList)) {
+          const mappedProducts = productsList.map((p: any) => ({
             id: p.id,
             name: p.name,
             description: p.description,
@@ -189,16 +193,16 @@ export default function App() {
           }));
           setProducts(mappedProducts);
         }
-        if (catRes && Array.isArray(catRes)) {
-          const mappedCategories = catRes.map((c: any) => ({
+        if (categoriesList && Array.isArray(categoriesList)) {
+          const mappedCategories = categoriesList.map((c: any) => ({
             id: c.slug || c.id,
             name: c.name,
             icon: c.icon
           }));
           setCategories(mappedCategories);
         }
-        if (bannerRes && Array.isArray(bannerRes)) {
-          setBanners(bannerRes);
+        if (bannersList && Array.isArray(bannersList)) {
+          setBanners(bannersList);
         }
       } catch (err) {
         console.warn('Backend server unreachable. Falling back to offline mock datasets.', err);
