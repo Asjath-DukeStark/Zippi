@@ -34,6 +34,7 @@ interface ProductDetailsModalProps {
   onSelectAddress?: (addr: Address) => void;
   onOpenCart?: () => void;
   onSelectProduct?: (product: Product) => void;
+  products?: Product[];
 }
 
 export default function ProductDetailsModal({
@@ -47,6 +48,7 @@ export default function ProductDetailsModal({
   onSelectAddress,
   onOpenCart,
   onSelectProduct,
+  products,
 }: ProductDetailsModalProps) {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [showLocationWarning, setShowLocationWarning] = useState(true);
@@ -105,10 +107,11 @@ export default function ProductDetailsModal({
 
   // Filter similar items from same category
   const similarProducts = useMemo(() => {
-    return PRODUCTS
+    const allProducts = products || PRODUCTS;
+    return allProducts
       .filter(p => p.category === product.category && p.id !== product.id)
       .slice(0, 8);
-  }, [product]);
+  }, [product, products]);
 
   // Handle address picker selection
   const handleAddressPick = (addr: Address) => {

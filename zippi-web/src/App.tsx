@@ -35,7 +35,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 
-import { Product, CartItem, Address, Order } from './types';
+import { Product, Category, CartItem, Address, Order } from './types';
 import { PRODUCTS, CATEGORIES, INITIAL_ADDRESSES, ADS_CAROUSEL } from './data';
 
 import Logo from './components/Logo';
@@ -155,6 +155,58 @@ export default function App() {
   // Navigation 5 View Tabs: 'home' | 'categories' | 'deals' | 'account' | 'cart'
   const [activeTab, setActiveTab] = useState<'home' | 'categories' | 'deals' | 'account' | 'cart'>('home');
   const [showSplash, setShowSplash] = useState(true);
+
+  // Dynamic backend-derived state variables
+  const [products, setProducts] = useState<Product[]>(PRODUCTS);
+  const [categories, setCategories] = useState<Category[]>(CATEGORIES);
+  const [banners, setBanners] = useState<any[]>(ADS_CAROUSEL);
+
+  useEffect(() => {
+    let active = true;
+    const loadBackendData = async () => {
+      try {
+        const [prodRes, catRes, bannerRes] = await Promise.all([
+          fetch('http://localhost:3001/api/products').then(res => res.json()),
+          fetch('http://localhost:3001/api/categories').then(res => res.json()),
+          fetch('http://localhost:3001/api/banners').then(res => res.json())
+        ]);
+        if (!active) return;
+        if (prodRes && Array.isArray(prodRes)) {
+          const mappedProducts = prodRes.map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            description: p.description,
+            category: p.categorySlug || p.category_slug || p.category,
+            price: Number(p.price),
+            originalPrice: p.originalPrice !== undefined ? Number(p.originalPrice) : (p.original_price !== undefined ? Number(p.original_price) : undefined),
+            discountPercent: p.discountPercent !== undefined ? Number(p.discountPercent) : (p.discount_percent !== undefined ? Number(p.discount_percent) : undefined),
+            unit: p.unit,
+            image: p.imageUrl || p.image_url || p.image,
+            popular: !!p.popular,
+            stock: p.stock !== undefined ? Number(p.stock) : 0,
+            rating: p.rating !== undefined ? Number(p.rating) : 5,
+            reviewsCount: p.reviewsCount !== undefined ? Number(p.reviewsCount) : (p.reviews_count !== undefined ? Number(p.reviews_count) : 0)
+          }));
+          setProducts(mappedProducts);
+        }
+        if (catRes && Array.isArray(catRes)) {
+          const mappedCategories = catRes.map((c: any) => ({
+            id: c.slug || c.id,
+            name: c.name,
+            icon: c.icon
+          }));
+          setCategories(mappedCategories);
+        }
+        if (bannerRes && Array.isArray(bannerRes)) {
+          setBanners(bannerRes);
+        }
+      } catch (err) {
+        console.warn('Backend server unreachable. Falling back to offline mock datasets.', err);
+      }
+    };
+    loadBackendData();
+    return () => { active = false; };
+  }, []);
 
   // Interactive Switcher Tile Active ID
   const [activeSwitcherTile, setActiveSwitcherTile] = useState<string>('zippi');
@@ -468,7 +520,7 @@ export default function App() {
   };
 
   // Perform Dynamic filtering and sorting of products in accordance with chips states
-  const filteredProducts = PRODUCTS.filter((p) => {
+  const filteredProducts = products.filter((p) => {
     // 1. Category checklist
     const matchesCategory = selectedCategory === 'all' || p.category === selectedCategory;
     
@@ -509,12 +561,12 @@ export default function App() {
   });
 
   // Calculate separate list values for sections
-  const bestsellerProducts = PRODUCTS.filter(p => p.popular);
-  const freshTodayProducts = PRODUCTS.filter(p => p.category === 'veggies' || p.category === 'fruits' || p.category === 'dairy');
+  const bestsellerProducts = products.filter(p => p.popular);
+  const freshTodayProducts = products.filter(p => p.category === 'veggies' || p.category === 'fruits' || p.category === 'dairy');
 
-  const trendingProductsList = TRENDING_IDS.map(id => PRODUCTS.find(p => p.id === id)).filter((p): p is Product => !!p);
-  const freshProductsList = FRESH_IDS.map(id => PRODUCTS.find(p => p.id === id)).filter((p): p is Product => !!p);
-  const flashProductsList = FLASH_IDS.map(id => PRODUCTS.find(p => p.id === id)).filter((p): p is Product => !!p);
+  const trendingProductsList = TRENDING_IDS.map(id => products.find(p => p.id === id)).filter((p): p is Product => !!p);
+  const freshProductsList = FRESH_IDS.map(id => products.find(p => p.id === id)).filter((p): p is Product => !!p);
+  const flashProductsList = FLASH_IDS.map(id => products.find(p => p.id === id)).filter((p): p is Product => !!p);
 
   const cartTotalQty = cart.reduce((acc, i) => acc + i.quantity, 0);
   const cartSubtotal = cart.reduce((acc, i) => acc + (i.product.price * i.quantity), 0);
@@ -587,6 +639,7 @@ export default function App() {
             wishlist={wishlist}
             onToggleWishlist={handleToggleWishlist}
             onOpenCart={() => setIsCartOpen(true)}
+            products={products}
           />
         ) : (
           <>
@@ -1236,6 +1289,7 @@ export default function App() {
             onToggleWishlist={handleToggleWishlist}
             onOpenCart={() => setIsCartOpen(true)}
             setBrowsingCategory={setBrowsingCategory}
+            products={products}
           />
         )}
 
@@ -2290,7 +2344,7 @@ export default function App() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {PRODUCTS.filter(p => wishlist.includes(p.id)).map(p => (
+                  {products.filter(p => wishlist.includes(p.id)).map(p => (
                     <div key={p.id} className="p-3 bg-gray-50 rounded-xl border border-gray-150 flex justify-between items-center gap-2">
                       <div className="flex items-center gap-2.5">
                         <ZippiProductImage 
@@ -2457,6 +2511,7 @@ export default function App() {
             onSelectAddress={setSelectedAddress}
             onOpenCart={() => setIsCartOpen(true)}
             onSelectProduct={setActiveDetailProduct}
+            products={products}
           />
         )}
 

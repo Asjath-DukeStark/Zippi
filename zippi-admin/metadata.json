@@ -1,0 +1,6 @@
+{
+  "name": "Zippi Admin Portal",
+  "description": "Premium, professional administration portal for the Zippi Sri Lanka delivery service. Features management systems for products, categories, orders, riders, promotions, and metrics reporting.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

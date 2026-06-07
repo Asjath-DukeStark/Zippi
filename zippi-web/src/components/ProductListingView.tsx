@@ -45,6 +45,7 @@ interface ProductListingViewProps {
   wishlist: string[];
   onToggleWishlist: (productId: string) => void;
   onOpenCart: () => void;
+  products?: Product[];
 }
 
 const DETAILED_CATEGORIES_LOCAL = [
@@ -77,6 +78,7 @@ export default function ProductListingView({
   wishlist,
   onToggleWishlist,
   onOpenCart,
+  products,
 }: ProductListingViewProps) {
   // Filters State
   const [browseFastDelivery, setBrowseFastDelivery] = useState(true); // Default active (yellow)
@@ -118,43 +120,44 @@ export default function ProductListingView({
 
   // Map category code to exact data products
   const categoryProductsRaw = useMemo(() => {
-    let items = PRODUCTS;
+    const allProducts = products || PRODUCTS;
+    let items = allProducts;
     if (browsingCategory === 'veggies') {
       // Fresh Produce
-      items = PRODUCTS.filter(p => p.category === 'veggies' || p.category === 'fruits');
+      items = allProducts.filter(p => p.category === 'veggies' || p.category === 'fruits');
     } else if (browsingCategory === 'dairy') {
-      items = PRODUCTS.filter(p => p.category === 'dairy');
+      items = allProducts.filter(p => p.category === 'dairy');
     } else if (browsingCategory === 'meats') {
-      items = PRODUCTS.filter(p => p.category === 'meats');
+      items = allProducts.filter(p => p.category === 'meats');
     } else if (browsingCategory === 'bakery') {
-      items = PRODUCTS.filter(p => p.category === 'bakery');
+      items = allProducts.filter(p => p.category === 'bakery');
     } else if (browsingCategory === 'beverages') {
-      items = PRODUCTS.filter(p => p.category === 'beverages');
+      items = allProducts.filter(p => p.category === 'beverages');
     } else if (browsingCategory === 'snacks') {
-      items = PRODUCTS.filter(p => p.category === 'snacks');
+      items = allProducts.filter(p => p.category === 'snacks');
     } else if (browsingCategory === 'frozen') {
-      items = PRODUCTS.filter(p => p.category === 'frozen');
+      items = allProducts.filter(p => p.category === 'frozen');
     } else if (browsingCategory === 'cleaning') {
-      items = PRODUCTS.filter(p => p.category === 'cleaning');
+      items = allProducts.filter(p => p.category === 'cleaning');
     } else if (browsingCategory === 'personal') {
-      items = PRODUCTS.filter(p => p.name.toLowerCase().includes('eco') || p.category === 'cleaning');
+      items = allProducts.filter(p => p.name.toLowerCase().includes('eco') || p.category === 'cleaning');
     } else if (browsingCategory === 'baby') {
-      items = PRODUCTS.filter(p => p.name.toLowerCase().includes('organic') || p.category === 'dairy');
+      items = allProducts.filter(p => p.name.toLowerCase().includes('organic') || p.category === 'dairy');
     } else if (browsingCategory === 'breakfast') {
-      items = PRODUCTS.filter(p => p.category === 'bakery' || p.category === 'dairy' || p.id === 'be1');
+      items = allProducts.filter(p => p.category === 'bakery' || p.category === 'dairy' || p.id === 'be1');
     } else if (browsingCategory === 'canned') {
-      items = PRODUCTS.filter(p => p.category === 'pantry');
+      items = allProducts.filter(p => p.category === 'pantry');
     } else if (browsingCategory === 'pantry') {
-      items = PRODUCTS.filter(p => p.category === 'pantry');
+      items = allProducts.filter(p => p.category === 'pantry');
     } else if (browsingCategory === 'sweets') {
-      items = PRODUCTS.filter(p => p.category === 'snacks');
+      items = allProducts.filter(p => p.category === 'snacks');
     } else if (browsingCategory === 'health') {
-      items = PRODUCTS.filter(p => p.name.toLowerCase().includes('organic') || p.category === 'veggies');
+      items = allProducts.filter(p => p.name.toLowerCase().includes('organic') || p.category === 'veggies');
     } else {
-      items = PRODUCTS.filter(p => p.category === browsingCategory);
+      items = allProducts.filter(p => p.category === browsingCategory);
     }
     return items;
-  }, [browsingCategory]);
+  }, [browsingCategory, products]);
 
   // Apply filters and sorting
   const filteredAndSortedProducts = useMemo(() => {

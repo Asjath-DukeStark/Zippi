@@ -45,6 +45,7 @@ interface DealsViewProps {
   onToggleWishlist: (productId: string) => void;
   onOpenCart: () => void;
   setBrowsingCategory: (catId: string | null) => void;
+  products?: Product[];
 }
 
 const LOCAL_BRANDS = ['All', 'Kotmale', 'Pelwatte', 'Araliya', 'Dilmah'];
@@ -65,6 +66,7 @@ export default function DealsView({
   onToggleWishlist,
   onOpenCart,
   setBrowsingCategory,
+  products,
 }: DealsViewProps) {
   // Filters State
   const [dealSearchQuery, setDealSearchQuery] = useState('');
@@ -96,8 +98,9 @@ export default function DealsView({
 
   // Derive products on sale (i.e. those with discountPercent or onSale indicator)
   const dealsProductsRaw = useMemo(() => {
-    return PRODUCTS.filter(p => p.discountPercent && p.discountPercent > 0);
-  }, []);
+    const allProducts = products || PRODUCTS;
+    return allProducts.filter(p => p.discountPercent && p.discountPercent > 0);
+  }, [products]);
 
   // Filter and Sort execution
   const filteredAndSortedDeals = useMemo(() => {
