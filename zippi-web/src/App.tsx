@@ -212,7 +212,7 @@ export default function App() {
   // Filter conditions & text searching states
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTabCategory, setSelectedTabCategory] = useState<string>('grocery');
+  const [selectedTabCategory, setSelectedTabCategory] = useState<string | null>(null);
 
   // Group DETAILED_CATEGORIES into rows of 3 for the accordion grid structure
   const categoryRows = useMemo(() => {
@@ -1237,7 +1237,7 @@ export default function App() {
                           <div
                             key={cat.id}
                             onClick={() => {
-                              setSelectedTabCategory(cat.id);
+                              setSelectedTabCategory(prev => prev === cat.id ? null : cat.id);
                             }}
                             className={`rounded-2xl p-2.5 flex flex-col justify-between items-center text-center cursor-pointer border transition-all duration-200 active:scale-95 h-[115px] ${
                               isSelected 
