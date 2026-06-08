@@ -8,16 +8,67 @@ const isPlaceholder = !process.env.SUPABASE_URL ||
                       process.env.SUPABASE_SERVICE_KEY.includes('your-service-role');
 
 const CATEGORIES = [
-  { name: 'All Fresh', slug: 'all', icon: 'Sparkles' },
-  { name: 'Fresh Produce', slug: 'veggies', icon: 'Leaf' },
-  { name: 'Dairy & Eggs', slug: 'dairy', icon: 'Milk' },
-  { name: 'Meat & Seafood', slug: 'meats', icon: 'Beef' },
-  { name: 'Bakery & Bread', slug: 'bakery', icon: 'Croissant' },
-  { name: 'Beverages', slug: 'beverages', icon: 'Coffee' },
-  { name: 'Snacks & Sweets', slug: 'snacks', icon: 'Cookie' },
-  { name: 'Frozen Food', slug: 'frozen', icon: 'Sparkles' },
-  { name: 'Cleaning & Home', slug: 'cleaning', icon: 'Sparkles' },
-  { name: 'Pantry & Staples', slug: 'pantry', icon: 'Sparkles' }
+  // Main Categories
+  { name: 'Grocery', slug: 'grocery', icon: 'ShoppingBag', parent_slug: null },
+  { name: 'Pharmacy', slug: 'pharmacy', icon: 'HeartPulse', parent_slug: null },
+  { name: 'Baby Care', slug: 'baby-care', icon: 'Smile', parent_slug: null },
+  { name: 'Meat', slug: 'meat', icon: 'Beef', parent_slug: null },
+  { name: 'Bakery', slug: 'bakery-main', icon: 'Croissant', parent_slug: null },
+  { name: 'Fancy & Cosmetics', slug: 'fancy-cosmetics', icon: 'Sparkles', parent_slug: null },
+  { name: 'Masala', slug: 'masala', icon: 'Flame', parent_slug: null },
+  { name: 'Car Rental', slug: 'car-rental', icon: 'Car', parent_slug: null },
+
+  // Subcategories of Grocery
+  { name: 'Fruits & Vegetables', slug: 'fruits-veggies', icon: 'Leaf', parent_slug: 'grocery' },
+  { name: 'Dairy & Eggs', slug: 'dairy', icon: 'Milk', parent_slug: 'grocery' },
+  { name: 'Pantry & Staples', slug: 'pantry', icon: 'Sparkles', parent_slug: 'grocery' },
+  { name: 'Snacks & Sweets', slug: 'snacks', icon: 'Cookie', parent_slug: 'grocery' },
+  { name: 'Beverages', slug: 'beverages', icon: 'Coffee', parent_slug: 'grocery' },
+  { name: 'Frozen Food', slug: 'frozen', icon: 'Sparkles', parent_slug: 'grocery' },
+  { name: 'Cleaning & Home', slug: 'cleaning', icon: 'Sparkles', parent_slug: 'grocery' },
+
+  // Subcategories of Pharmacy
+  { name: 'Medicines', slug: 'medicines', icon: 'HeartPulse', parent_slug: 'pharmacy' },
+  { name: 'Wellness & Supplements', slug: 'wellness', icon: 'Sparkles', parent_slug: 'pharmacy' },
+  { name: 'First Aid', slug: 'first-aid', icon: 'HeartPulse', parent_slug: 'pharmacy' },
+  { name: 'Personal Care', slug: 'personal-care', icon: 'Smile', parent_slug: 'pharmacy' },
+
+  // Subcategories of Baby Care
+  { name: 'Diapers & Wipes', slug: 'diapers', icon: 'Smile', parent_slug: 'baby-care' },
+  { name: 'Baby Food', slug: 'baby-food', icon: 'Milk', parent_slug: 'baby-care' },
+  { name: 'Baby Toiletries', slug: 'baby-toiletries', icon: 'Smile', parent_slug: 'baby-care' },
+  { name: 'Toys & Accessories', slug: 'baby-toys', icon: 'Sparkles', parent_slug: 'baby-care' },
+
+  // Subcategories of Meat
+  { name: 'Chicken', slug: 'chicken', icon: 'Beef', parent_slug: 'meat' },
+  { name: 'Beef & Mutton', slug: 'beef-mutton', icon: 'Beef', parent_slug: 'meat' },
+  { name: 'Seafood', slug: 'seafood', icon: 'Beef', parent_slug: 'meat' },
+  { name: 'Sausage & Cold Cuts', slug: 'cold-cuts', icon: 'Beef', parent_slug: 'meat' },
+
+  // Subcategories of Bakery
+  { name: 'Breads & Buns', slug: 'bread-buns', icon: 'Croissant', parent_slug: 'bakery-main' },
+  { name: 'Cakes & Pastries', slug: 'cakes-pastries', icon: 'Croissant', parent_slug: 'bakery-main' },
+  { name: 'Cookies & Savories', slug: 'cookies-savories', icon: 'Cookie', parent_slug: 'bakery-main' },
+
+  // Subcategories of Fancy & Cosmetics
+  { name: 'Makeup', slug: 'makeup', icon: 'Sparkles', parent_slug: 'fancy-cosmetics' },
+  { name: 'Skincare', slug: 'skincare', icon: 'Sparkles', parent_slug: 'fancy-cosmetics' },
+  { name: 'Haircare', slug: 'haircare', icon: 'Sparkles', parent_slug: 'fancy-cosmetics' },
+  { name: 'Fragrances', slug: 'fragrances', icon: 'Sparkles', parent_slug: 'fancy-cosmetics' },
+  { name: 'Accessories', slug: 'fancy-accessories', icon: 'Sparkles', parent_slug: 'fancy-cosmetics' },
+
+  // Subcategories of Masala
+  { name: 'Spices & Powders', slug: 'spices-powders', icon: 'Flame', parent_slug: 'masala' },
+  { name: 'Whole Spices', slug: 'whole-spices', icon: 'Flame', parent_slug: 'masala' },
+  { name: 'Curry Pastes', slug: 'curry-pastes', icon: 'Flame', parent_slug: 'masala' },
+  { name: 'Herbs & Seasonings', slug: 'herbs-seasoning', icon: 'Leaf', parent_slug: 'masala' },
+
+  // Subcategories of Car Rental
+  { name: 'Hatchback', slug: 'hatchback', icon: 'Car', parent_slug: 'car-rental' },
+  { name: 'Sedan', slug: 'sedan', icon: 'Car', parent_slug: 'car-rental' },
+  { name: 'SUV', slug: 'suv', icon: 'Car', parent_slug: 'car-rental' },
+  { name: 'Luxury Cars', slug: 'luxury-cars', icon: 'Car', parent_slug: 'car-rental' },
+  { name: 'Vans & Buses', slug: 'vans-buses', icon: 'Car', parent_slug: 'car-rental' },
 ];
 
 const PRODUCTS = [
@@ -25,7 +76,7 @@ const PRODUCTS = [
     id: 'f1',
     name: 'Sri Lankan Organic Cavendish Bananas',
     description: 'Sweet, rich, and chemically-free grown local Cavendish bananas. Highly nutritious and perfect for daily energy boost.',
-    category_slug: 'veggies',
+    category_slug: 'fruits-veggies',
     price: 360,
     original_price: 450,
     discount_percent: 20,
@@ -41,7 +92,7 @@ const PRODUCTS = [
     id: 'f2',
     name: 'Premium Red Seedless Grapes',
     description: 'Crisp, plump, and ultra-sweet red seedless grapes imported from elite vineyards. Hand-picked and thoroughly washed.',
-    category_slug: 'veggies',
+    category_slug: 'fruits-veggies',
     price: 1890,
     original_price: 2200,
     discount_percent: 14,
@@ -57,7 +108,7 @@ const PRODUCTS = [
     id: 'f3',
     name: 'Fresh Colombo Local Papaya',
     description: 'Rich, orange-fleshed local papaya, harvested early this morning. Creamy texture and extremely sweet wellness aid.',
-    category_slug: 'veggies',
+    category_slug: 'fruits-veggies',
     price: 490,
     unit: '1.2 kg - 1.5 kg',
     image_url: 'https://images.unsplash.com/photo-1517282009859-f000ec3b26fe?w=500&auto=format&fit=crop&q=80',
@@ -71,7 +122,7 @@ const PRODUCTS = [
     id: 'v1',
     name: 'Nuwara Eliya Fresh Carrots',
     description: 'Crispy, sweet, premium carrots straight from the cold valley hills of Nuwara Eliya. High beta-carotene and completely direct-source.',
-    category_slug: 'veggies',
+    category_slug: 'fruits-veggies',
     price: 420,
     original_price: 480,
     discount_percent: 12,
@@ -117,7 +168,7 @@ const PRODUCTS = [
     id: 'm1',
     name: 'Fresh Skinless Antibiotic-Free Chicken Breast',
     description: 'Premium choice double chicken outer breast portions. Sourced from high-welfare, cage-free poultry environments.',
-    category_slug: 'meats',
+    category_slug: 'chicken',
     price: 1350,
     original_price: 1600,
     discount_percent: 15,
@@ -160,6 +211,110 @@ const PRODUCTS = [
     stock: 20,
     rating: 4.8,
     reviews_count: 412
+  },
+  // Pharmacy Products
+  {
+    id: 'med_panadol',
+    name: 'Panadol 500mg',
+    description: 'Relieves mild to moderate pain including headache, migraine, muscle ache, sore throat, and toothache.',
+    category_slug: 'medicines',
+    price: 150,
+    unit: '12 Tablets',
+    image_url: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=500&auto=format&fit=crop&q=80',
+    popular: true,
+    is_flash_deal: false,
+    stock: 100,
+    rating: 4.9,
+    reviews_count: 98
+  },
+  {
+    id: 'med_vitc',
+    name: 'Premium Vitamin C 1000mg',
+    description: 'Supports standard immune health and antioxidant cellular defense. Made from organic extracts.',
+    category_slug: 'wellness',
+    price: 1850,
+    unit: '30 Tablets',
+    image_url: 'https://images.unsplash.com/photo-1616679911721-ebd6eec18fcd?w=500&auto=format&fit=crop&q=80',
+    popular: false,
+    is_flash_deal: false,
+    stock: 25,
+    rating: 4.7,
+    reviews_count: 34
+  },
+  // Baby Care Products
+  {
+    id: 'baby_diapers',
+    name: 'Huggies Dry Diapers Size 3',
+    description: 'Offers overnight leakage lock with super absorbent core. Premium soft skin design.',
+    category_slug: 'diapers',
+    price: 2950,
+    unit: '24 Pack',
+    image_url: 'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=500&auto=format&fit=crop&q=80',
+    popular: true,
+    is_flash_deal: false,
+    stock: 15,
+    rating: 4.8,
+    reviews_count: 57
+  },
+  // Bakery Products
+  {
+    id: 'bak_cake',
+    name: 'Zippi Fresh Butter Cake',
+    description: 'Freshly baked traditional moist rich butter cake. Perfect with evening milk tea.',
+    category_slug: 'cakes-pastries',
+    price: 950,
+    unit: '500g',
+    image_url: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=500&auto=format&fit=crop&q=80',
+    popular: false,
+    is_flash_deal: false,
+    stock: 10,
+    rating: 4.6,
+    reviews_count: 22
+  },
+  // Fancy & Cosmetics
+  {
+    id: 'cos_moisturizer',
+    name: 'Cetaphil Hydrating Moisturizer',
+    description: 'Dermatologist recommended daily facial and body moisturizer for dry, sensitive skin.',
+    category_slug: 'skincare',
+    price: 3450,
+    unit: '100ml',
+    image_url: 'https://images.unsplash.com/photo-1608248597481-496100c80836?w=500&auto=format&fit=crop&q=80',
+    popular: true,
+    is_flash_deal: false,
+    stock: 18,
+    rating: 4.9,
+    reviews_count: 140
+  },
+  // Masala Products
+  {
+    id: 'mas_curry',
+    name: 'Jaffna Roasted Curry Powder',
+    description: 'Authentic rich roasted blend of pure Sri Lankan spices. Perfect for meats and curries.',
+    category_slug: 'spices-powders',
+    price: 380,
+    unit: '200g',
+    image_url: 'https://images.unsplash.com/photo-1596797038530-2c107229654b?w=500&auto=format&fit=crop&q=80',
+    popular: true,
+    is_flash_deal: false,
+    stock: 45,
+    rating: 4.8,
+    reviews_count: 76
+  },
+  // Car Rental
+  {
+    id: 'car_alto',
+    name: 'Suzuki Alto (Self-Drive)',
+    description: 'Efficient, compact hatchback car for easy city travel. Unlimited mileage daily options.',
+    category_slug: 'hatchback',
+    price: 6500,
+    unit: 'Per Day',
+    image_url: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=500&auto=format&fit=crop&q=80',
+    popular: false,
+    is_flash_deal: false,
+    stock: 5,
+    rating: 4.5,
+    reviews_count: 12
   }
 ];
 

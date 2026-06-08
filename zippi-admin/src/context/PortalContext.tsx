@@ -89,16 +89,24 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [settings, setSettings] = useState<PortalSettings>(() => getStored("settings", INITIAL_SETTINGS));
   const [notifications, setNotifications] = useState<NotificationAlert[]>(() => getStored("notifications", INITIAL_NOTIFICATIONS));
 
+  const safeSetItem = (key: string, value: any) => {
+    try {
+      localStorage.setItem(`zippi_admin_${key}`, JSON.stringify(value));
+    } catch (err) {
+      console.warn(`Failed to save ${key} to localStorage: quota exceeded or disabled.`, err);
+    }
+  };
+
   // Save to localStorage whenever collections modify
-  useEffect(() => { localStorage.setItem("zippi_admin_categories", JSON.stringify(categories)); }, [categories]);
-  useEffect(() => { localStorage.setItem("zippi_admin_products", JSON.stringify(products)); }, [products]);
-  useEffect(() => { localStorage.setItem("zippi_admin_orders", JSON.stringify(orders)); }, [orders]);
-  useEffect(() => { localStorage.setItem("zippi_admin_riders", JSON.stringify(riders)); }, [riders]);
-  useEffect(() => { localStorage.setItem("zippi_admin_customers", JSON.stringify(customers)); }, [customers]);
-  useEffect(() => { localStorage.setItem("zippi_admin_promotions", JSON.stringify(promotions)); }, [promotions]);
-  useEffect(() => { localStorage.setItem("zippi_admin_banners", JSON.stringify(banners)); }, [banners]);
-  useEffect(() => { localStorage.setItem("zippi_admin_settings", JSON.stringify(settings)); }, [settings]);
-  useEffect(() => { localStorage.setItem("zippi_admin_notifications", JSON.stringify(notifications)); }, [notifications]);
+  useEffect(() => { safeSetItem("categories", categories); }, [categories]);
+  useEffect(() => { safeSetItem("products", products); }, [products]);
+  useEffect(() => { safeSetItem("orders", orders); }, [orders]);
+  useEffect(() => { safeSetItem("riders", riders); }, [riders]);
+  useEffect(() => { safeSetItem("customers", customers); }, [customers]);
+  useEffect(() => { safeSetItem("promotions", promotions); }, [promotions]);
+  useEffect(() => { safeSetItem("banners", banners); }, [banners]);
+  useEffect(() => { safeSetItem("settings", settings); }, [settings]);
+  useEffect(() => { safeSetItem("notifications", notifications); }, [notifications]);
 
   // Recalculate Category ProductCount when products or categories update
   useEffect(() => {
@@ -194,6 +202,28 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
               assignedRiderId: o.riderId || undefined
             }));
             setOrders(mappedOrders);
+          }
+        }
+      }
+
+      // 4. Fetch banners
+      const tokenForBanners = localStorage.getItem("zippi_admin_token");
+      if (tokenForBanners) {
+        const bannerRes = await apiFetch("/admin/banners");
+        if (bannerRes.ok) {
+          const bannerData = await bannerRes.json();
+          if (bannerData.success && Array.isArray(bannerData.data)) {
+            const mappedBanners = bannerData.data.map((b: any) => ({
+              id: b.id,
+              title: b.title,
+              subtitle: b.subtitle || "",
+              imageUrl: b.image_url || b.imageUrl || "",
+              linkUrl: b.link_url || b.linkUrl || "",
+              status: b.is_active !== false ? "Active" : "Inactive",
+              slot: b.slot || "Home Hero",
+              sortOrder: b.sort_order !== undefined ? b.sort_order : 999
+            }));
+            setBanners(mappedBanners);
           }
         }
       }

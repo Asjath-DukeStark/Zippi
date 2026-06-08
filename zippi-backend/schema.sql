@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS public.categories (
   name TEXT NOT NULL,
   slug TEXT UNIQUE NOT NULL,
   icon TEXT, -- Lucide icon name, e.g., 'Sparkles', 'Leaf'
+  parent_slug TEXT REFERENCES public.categories(slug) ON UPDATE CASCADE,
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );

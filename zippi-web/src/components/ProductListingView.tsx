@@ -3,10 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { ArrowLeft, Search, ShoppingBag, Share2, Plus, Minus, Trash2, X, ChevronDown, Check, Sparkles } from 'lucide-react';
 import { Product, CartItem } from '../types';
-import { PRODUCTS } from '../data';
+import { PRODUCTS, CATEGORIES } from '../data';
 import ProductCard from './ProductCard';
 import FilterBottomSheet from './FilterBottomSheet';
 
@@ -47,24 +47,6 @@ interface ProductListingViewProps {
   onOpenCart: () => void;
   products?: Product[];
 }
-
-const DETAILED_CATEGORIES_LOCAL = [
-  { id: 'veggies', name: 'Fresh Produce', image: '/category-veggies.png' },
-  { id: 'dairy', name: 'Dairy & Eggs', image: '/category-dairy.png' },
-  { id: 'meats', name: 'Meat & Seafood', image: '/category-meats.png' },
-  { id: 'bakery', name: 'Bakery & Bread', image: '/category-bakery.png' },
-  { id: 'beverages', name: 'Beverages', image: '/category-beverages.png' },
-  { id: 'snacks', name: 'Snacks & Chips', image: '/category-snacks.png' },
-  { id: 'frozen', name: 'Frozen Foods', image: '/category-frozen.png' },
-  { id: 'cleaning', name: 'Cleaning & Home', image: '/category-cleaning.png' },
-  { id: 'personal', name: 'Personal Care', image: '/category-personal.png' },
-  { id: 'baby', name: 'Baby & Kids', image: '/category-baby.png' },
-  { id: 'breakfast', name: 'Breakfast', image: '/category-breakfast.png' },
-  { id: 'canned', name: 'Canned & Dry Goods', image: '/category-canned.png' },
-  { id: 'pantry', name: 'Oils & Condiments', image: '/category-pantry.png' },
-  { id: 'sweets', name: 'Sweets & Chocolates', image: '/category-sweets.png' },
-  { id: 'health', name: 'Health Foods', image: '/category-health.png' }
-];
 
 const LOCAL_BRANDS = ['All', 'Kotmale', 'Pelwatte', 'Araliya', 'Dilmah', 'Harischandra'];
 
@@ -109,55 +91,71 @@ export default function ProductListingView({
   // Success Toast Banner
   const [toastText, setToastText] = useState<string | null>(null);
 
-  // Category identity meta
-  const currentCategory = useMemo(() => {
-    return DETAILED_CATEGORIES_LOCAL.find(c => c.id === browsingCategory) || {
-      id: browsingCategory,
-      name: 'Fresh Produce',
-      image: ''
+  // Subcategory Selection State
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>('all');
+
+  // Check if browsingCategory is actually a subcategory and map back to parent if needed
+  const categoryRoutingInfo = useMemo(() => {
+    const matched = CATEGORIES.find(c => c.id === browsingCategory);
+    const parentId = matched?.parentSlug || matched?.parent_slug;
+    if (parentId) {
+      return {
+        parentId,
+        subcategoryId: browsingCategory,
+        isSubcategory: true
+      };
+    }
+    return {
+      parentId: browsingCategory,
+      subcategoryId: 'all',
+      isSubcategory: false
     };
   }, [browsingCategory]);
+
+  // Update selectedSubcategory state when browsingCategory changes
+  useEffect(() => {
+    if (categoryRoutingInfo.isSubcategory) {
+      setSelectedSubcategory(categoryRoutingInfo.subcategoryId);
+    } else {
+      setSelectedSubcategory('all');
+    }
+  }, [categoryRoutingInfo]);
+
+  // Category identity meta
+  const currentCategory = useMemo(() => {
+    const parentId = categoryRoutingInfo.parentId;
+    return CATEGORIES.find(c => c.id === parentId) || {
+      id: parentId,
+      name: 'Category',
+      icon: 'Sparkles'
+    };
+  }, [categoryRoutingInfo.parentId]);
+
+  // Find subcategories belonging to this parent category
+  const subcategories = useMemo(() => {
+    const parentId = categoryRoutingInfo.parentId;
+    return CATEGORIES.filter(c => c.parentSlug === parentId || c.parent_slug === parentId);
+  }, [categoryRoutingInfo.parentId]);
 
   // Map category code to exact data products
   const categoryProductsRaw = useMemo(() => {
     const allProducts = products || PRODUCTS;
-    let items = allProducts;
-    if (browsingCategory === 'veggies') {
-      // Fresh Produce
-      items = allProducts.filter(p => p.category === 'veggies' || p.category === 'fruits');
-    } else if (browsingCategory === 'dairy') {
-      items = allProducts.filter(p => p.category === 'dairy');
-    } else if (browsingCategory === 'meats') {
-      items = allProducts.filter(p => p.category === 'meats');
-    } else if (browsingCategory === 'bakery') {
-      items = allProducts.filter(p => p.category === 'bakery');
-    } else if (browsingCategory === 'beverages') {
-      items = allProducts.filter(p => p.category === 'beverages');
-    } else if (browsingCategory === 'snacks') {
-      items = allProducts.filter(p => p.category === 'snacks');
-    } else if (browsingCategory === 'frozen') {
-      items = allProducts.filter(p => p.category === 'frozen');
-    } else if (browsingCategory === 'cleaning') {
-      items = allProducts.filter(p => p.category === 'cleaning');
-    } else if (browsingCategory === 'personal') {
-      items = allProducts.filter(p => p.name.toLowerCase().includes('eco') || p.category === 'cleaning');
-    } else if (browsingCategory === 'baby') {
-      items = allProducts.filter(p => p.name.toLowerCase().includes('organic') || p.category === 'dairy');
-    } else if (browsingCategory === 'breakfast') {
-      items = allProducts.filter(p => p.category === 'bakery' || p.category === 'dairy' || p.id === 'be1');
-    } else if (browsingCategory === 'canned') {
-      items = allProducts.filter(p => p.category === 'pantry');
-    } else if (browsingCategory === 'pantry') {
-      items = allProducts.filter(p => p.category === 'pantry');
-    } else if (browsingCategory === 'sweets') {
-      items = allProducts.filter(p => p.category === 'snacks');
-    } else if (browsingCategory === 'health') {
-      items = allProducts.filter(p => p.name.toLowerCase().includes('organic') || p.category === 'veggies');
-    } else {
-      items = allProducts.filter(p => p.category === browsingCategory);
+    const parentId = categoryRoutingInfo.parentId;
+    
+    // Filter by specific subcategory if selected
+    if (selectedSubcategory !== 'all') {
+      return allProducts.filter(p => p.category === selectedSubcategory);
     }
-    return items;
-  }, [browsingCategory, products]);
+
+    // Filter by main category (matches parentSlug)
+    if (subcategories.length > 0) {
+      const subSlugs = subcategories.map(s => s.id);
+      return allProducts.filter(p => subSlugs.includes(p.category) || p.category === parentId);
+    }
+
+    // Direct match (if it is a flat category / leaf subcategory)
+    return allProducts.filter(p => p.category === parentId);
+  }, [categoryRoutingInfo.parentId, selectedSubcategory, subcategories, products]);
 
   // Apply filters and sorting
   const filteredAndSortedProducts = useMemo(() => {
@@ -434,6 +432,41 @@ export default function ProductListingView({
       {/* ── MAIN SCROLL FEED ── */}
       <div className="flex-grow overflow-y-auto bg-gray-50/50 p-4 pb-20 select-none" id="listing-scroll-feed">
         
+        {/* Subcategories Horizontal scroll bar */}
+        {subcategories.length > 0 && (
+          <div className="mb-4 -mx-4 px-4 pb-2 border-b border-gray-150 overflow-x-auto flex items-center gap-2 scrollbar-none" id="subcategories-horizontal-rail">
+            <button
+              onClick={() => {
+                setSelectedSubcategory('all');
+                setVisibleCount(20);
+              }}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all select-none border ${
+                selectedSubcategory === 'all'
+                  ? 'bg-[#F5C518] border-transparent text-[#1A1A1A] font-extrabold shadow-xs active:scale-95'
+                  : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50 active:scale-95'
+              }`}
+            >
+              All {currentCategory.name}
+            </button>
+            {subcategories.map((sub) => (
+              <button
+                key={sub.id}
+                onClick={() => {
+                  setSelectedSubcategory(sub.id);
+                  setVisibleCount(20);
+                }}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all select-none border ${
+                  selectedSubcategory === sub.id
+                    ? 'bg-[#F5C518] border-transparent text-[#1A1A1A] font-extrabold shadow-xs active:scale-95'
+                    : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50 active:scale-95'
+                }`}
+              >
+                {sub.name}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Summary total count */}
         <div className="text-[11.5px] text-gray-400 font-bold uppercase tracking-wide mb-3 flex items-center justify-between">
           <span>{filteredAndSortedProducts.length} Premium Products Found</span>

@@ -358,7 +358,7 @@ export default function DealsView({
                 key={sc.id}
                 onClick={() => {
                   if (sc.active) {
-                    setBrowsingCategory('veggies'); // navigate to grocery
+                    setBrowsingCategory('grocery'); // navigate to grocery
                   } else {
                     triggerToast(`📦 ${sc.name} deals are coming soon! Stay tuned.`);
                   }

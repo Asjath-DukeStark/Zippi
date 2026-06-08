@@ -777,22 +777,22 @@ const db = {
   },
 
   banners: {
-    findAll: async () => {
+    findAll: async (all = false) => {
       if (isPlaceholder) {
-        return InMemoryDb.banners.findAll();
+        return InMemoryDb.banners.findAll(all);
       }
       try {
-        const { data, error } = await supabase
-          .from('banners')
-          .select('*')
-          .eq('is_active', true)
-          .order('sort_order', { ascending: true });
+        let query = supabase.from('banners').select('*');
+        if (!all) {
+          query = query.eq('is_active', true);
+        }
+        const { data, error } = await query.order('sort_order', { ascending: true });
 
         if (error) throw error;
         return data;
       } catch (err) {
         console.error('Supabase banners.findAll error, falling back:', err.message);
-        return InMemoryDb.banners.findAll();
+        return InMemoryDb.banners.findAll(all);
       }
     },
     create: async (bannerData) => {

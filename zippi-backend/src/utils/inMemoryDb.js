@@ -2,16 +2,67 @@ const bcrypt = require('bcryptjs');
 
 // Pre-seeded Categories
 const categories = [
-  { id: '1', name: 'All Fresh', slug: 'all', icon: 'Sparkles', is_active: true },
-  { id: '2', name: 'Fresh Produce', slug: 'veggies', icon: 'Leaf', is_active: true },
-  { id: '3', name: 'Dairy & Eggs', slug: 'dairy', icon: 'Milk', is_active: true },
-  { id: '4', name: 'Meat & Seafood', slug: 'meats', icon: 'Beef', is_active: true },
-  { id: '5', name: 'Bakery & Bread', slug: 'bakery', icon: 'Croissant', is_active: true },
-  { id: '6', name: 'Beverages', slug: 'beverages', icon: 'Coffee', is_active: true },
-  { id: '7', name: 'Snacks & Sweets', slug: 'snacks', icon: 'Cookie', is_active: true },
-  { id: '8', name: 'Frozen Food', slug: 'frozen', icon: 'Sparkles', is_active: true },
-  { id: '9', name: 'Cleaning & Home', slug: 'cleaning', icon: 'Sparkles', is_active: true },
-  { id: '10', name: 'Pantry & Staples', slug: 'pantry', icon: 'Sparkles', is_active: true }
+  // Main Categories
+  { id: 'grocery', name: 'Grocery', slug: 'grocery', icon: 'ShoppingBag', parent_slug: null, is_active: true },
+  { id: 'pharmacy', name: 'Pharmacy', slug: 'pharmacy', icon: 'HeartPulse', parent_slug: null, is_active: true },
+  { id: 'baby-care', name: 'Baby Care', slug: 'baby-care', icon: 'Smile', parent_slug: null, is_active: true },
+  { id: 'meat', name: 'Meat', slug: 'meat', icon: 'Beef', parent_slug: null, is_active: true },
+  { id: 'bakery-main', name: 'Bakery', slug: 'bakery-main', icon: 'Croissant', parent_slug: null, is_active: true },
+  { id: 'fancy-cosmetics', name: 'Fancy & Cosmetics', slug: 'fancy-cosmetics', icon: 'Sparkles', parent_slug: null, is_active: true },
+  { id: 'masala', name: 'Masala', slug: 'masala', icon: 'Flame', parent_slug: null, is_active: true },
+  { id: 'car-rental', name: 'Car Rental', slug: 'car-rental', icon: 'Car', parent_slug: null, is_active: true },
+
+  // Subcategories of Grocery
+  { id: 'fruits-veggies', name: 'Fruits & Vegetables', slug: 'fruits-veggies', icon: 'Leaf', parent_slug: 'grocery', is_active: true },
+  { id: 'dairy', name: 'Dairy & Eggs', slug: 'dairy', icon: 'Milk', parent_slug: 'grocery', is_active: true },
+  { id: 'pantry', name: 'Pantry & Staples', slug: 'pantry', icon: 'Sparkles', parent_slug: 'grocery', is_active: true },
+  { id: 'snacks', name: 'Snacks & Sweets', slug: 'snacks', icon: 'Cookie', parent_slug: 'grocery', is_active: true },
+  { id: 'beverages', name: 'Beverages', slug: 'beverages', icon: 'Coffee', parent_slug: 'grocery', is_active: true },
+  { id: 'frozen', name: 'Frozen Food', slug: 'frozen', icon: 'Sparkles', parent_slug: 'grocery', is_active: true },
+  { id: 'cleaning', name: 'Cleaning & Home', slug: 'cleaning', icon: 'Sparkles', parent_slug: 'grocery', is_active: true },
+
+  // Subcategories of Pharmacy
+  { id: 'medicines', name: 'Medicines', slug: 'medicines', icon: 'HeartPulse', parent_slug: 'pharmacy', is_active: true },
+  { id: 'wellness', name: 'Wellness & Supplements', slug: 'wellness', icon: 'Sparkles', parent_slug: 'pharmacy', is_active: true },
+  { id: 'first-aid', name: 'First Aid', slug: 'first-aid', icon: 'HeartPulse', parent_slug: 'pharmacy', is_active: true },
+  { id: 'personal-care', name: 'Personal Care', slug: 'personal-care', icon: 'Smile', parent_slug: 'pharmacy', is_active: true },
+
+  // Subcategories of Baby Care
+  { id: 'diapers', name: 'Diapers & Wipes', slug: 'diapers', icon: 'Smile', parent_slug: 'baby-care', is_active: true },
+  { id: 'baby-food', name: 'Baby Food', slug: 'baby-food', icon: 'Milk', parent_slug: 'baby-care', is_active: true },
+  { id: 'baby-toiletries', name: 'Baby Toiletries', slug: 'baby-toiletries', icon: 'Smile', parent_slug: 'baby-care', is_active: true },
+  { id: 'baby-toys', name: 'Toys & Accessories', slug: 'baby-toys', icon: 'Sparkles', parent_slug: 'baby-care', is_active: true },
+
+  // Subcategories of Meat
+  { id: 'chicken', name: 'Chicken', slug: 'chicken', icon: 'Beef', parent_slug: 'meat', is_active: true },
+  { id: 'beef-mutton', name: 'Beef & Mutton', slug: 'beef-mutton', icon: 'Beef', parent_slug: 'meat', is_active: true },
+  { id: 'seafood', name: 'Seafood', slug: 'seafood', icon: 'Beef', parent_slug: 'meat', is_active: true },
+  { id: 'cold-cuts', name: 'Sausage & Cold Cuts', slug: 'cold-cuts', icon: 'Beef', parent_slug: 'meat', is_active: true },
+
+  // Subcategories of Bakery
+  { id: 'bread-buns', name: 'Breads & Buns', slug: 'bread-buns', icon: 'Croissant', parent_slug: 'bakery-main', is_active: true },
+  { id: 'cakes-pastries', name: 'Cakes & Pastries', slug: 'cakes-pastries', icon: 'Croissant', parent_slug: 'bakery-main', is_active: true },
+  { id: 'cookies-savories', name: 'Cookies & Savories', slug: 'cookies-savories', icon: 'Cookie', parent_slug: 'bakery-main', is_active: true },
+
+  // Subcategories of Fancy & Cosmetics
+  { id: 'makeup', name: 'Makeup', slug: 'makeup', icon: 'Sparkles', parent_slug: 'fancy-cosmetics', is_active: true },
+  { id: 'skincare', name: 'Skincare', slug: 'skincare', icon: 'Sparkles', parent_slug: 'fancy-cosmetics', is_active: true },
+  { id: 'haircare', name: 'Haircare', slug: 'haircare', icon: 'Sparkles', parent_slug: 'fancy-cosmetics', is_active: true },
+  { id: 'fragrances', name: 'Fragrances', slug: 'fragrances', icon: 'Sparkles', parent_slug: 'fancy-cosmetics', is_active: true },
+  { id: 'fancy-accessories', name: 'Accessories', slug: 'fancy-accessories', icon: 'Sparkles', parent_slug: 'fancy-cosmetics', is_active: true },
+
+  // Subcategories of Masala
+  { id: 'spices-powders', name: 'Spices & Powders', slug: 'spices-powders', icon: 'Flame', parent_slug: 'masala', is_active: true },
+  { id: 'whole-spices', name: 'Whole Spices', slug: 'whole-spices', icon: 'Flame', parent_slug: 'masala', is_active: true },
+  { id: 'curry-pastes', name: 'Curry Pastes', slug: 'curry-pastes', icon: 'Flame', parent_slug: 'masala', is_active: true },
+  { id: 'herbs-seasoning', name: 'Herbs & Seasonings', slug: 'herbs-seasoning', icon: 'Leaf', parent_slug: 'masala', is_active: true },
+
+  // Subcategories of Car Rental
+  { id: 'hatchback', name: 'Hatchback', slug: 'hatchback', icon: 'Car', parent_slug: 'car-rental', is_active: true },
+  { id: 'sedan', name: 'Sedan', slug: 'sedan', icon: 'Car', parent_slug: 'car-rental', is_active: true },
+  { id: 'suv', name: 'SUV', slug: 'suv', icon: 'Car', parent_slug: 'car-rental', is_active: true },
+  { id: 'luxury-cars', name: 'Luxury Cars', slug: 'luxury-cars', icon: 'Car', parent_slug: 'car-rental', is_active: true },
+  { id: 'vans-buses', name: 'Vans & Buses', slug: 'vans-buses', icon: 'Car', parent_slug: 'car-rental', is_active: true },
 ];
 
 // Pre-seeded Products (from frontend data.ts)
@@ -20,7 +71,7 @@ const products = [
     id: 'f1',
     name: 'Sri Lankan Organic Cavendish Bananas',
     description: 'Sweet, rich, and chemically-free grown local Cavendish bananas. Highly nutritious and perfect for daily energy boost.',
-    category_slug: 'veggies',
+    category_slug: 'fruits-veggies',
     price: 360,
     original_price: 450,
     discount_percent: 20,
@@ -38,7 +89,7 @@ const products = [
     id: 'f2',
     name: 'Premium Red Seedless Grapes',
     description: 'Crisp, plump, and ultra-sweet red seedless grapes imported from elite vineyards. Hand-picked and thoroughly washed.',
-    category_slug: 'veggies',
+    category_slug: 'fruits-veggies',
     price: 1890,
     original_price: 2200,
     discount_percent: 14,
@@ -56,7 +107,7 @@ const products = [
     id: 'f3',
     name: 'Fresh Colombo Local Papaya',
     description: 'Rich, orange-fleshed local papaya, harvested early this morning. Creamy texture and extremely sweet wellness aid.',
-    category_slug: 'veggies',
+    category_slug: 'fruits-veggies',
     price: 490,
     unit: '1.2 kg - 1.5 kg',
     image_url: 'https://images.unsplash.com/photo-1517282009859-f000ec3b26fe?w=500&auto=format&fit=crop&q=80',
@@ -72,7 +123,7 @@ const products = [
     id: 'v1',
     name: 'Nuwara Eliya Fresh Carrots',
     description: 'Crispy, sweet, premium carrots straight from the cold valley hills of Nuwara Eliya. High beta-carotene and completely direct-source.',
-    category_slug: 'veggies',
+    category_slug: 'fruits-veggies',
     price: 420,
     original_price: 480,
     discount_percent: 12,
@@ -124,7 +175,7 @@ const products = [
     id: 'm1',
     name: 'Fresh Skinless Antibiotic-Free Chicken Breast',
     description: 'Premium choice double chicken outer breast portions. Sourced from high-welfare, cage-free poultry environments.',
-    category_slug: 'meats',
+    category_slug: 'chicken',
     price: 1350,
     original_price: 1600,
     discount_percent: 15,
@@ -173,6 +224,124 @@ const products = [
     reviews_count: 412,
     is_active: true,
     created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+  },
+  // Pharmacy Products
+  {
+    id: 'med_panadol',
+    name: 'Panadol 500mg',
+    description: 'Relieves mild to moderate pain including headache, migraine, muscle ache, sore throat, and toothache.',
+    category_slug: 'medicines',
+    price: 150,
+    unit: '12 Tablets',
+    image_url: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=500&auto=format&fit=crop&q=80',
+    popular: true,
+    is_flash_deal: false,
+    stock: 100,
+    rating: 4.9,
+    reviews_count: 98,
+    is_active: true,
+    created_at: new Date().toISOString()
+  },
+  {
+    id: 'med_vitc',
+    name: 'Premium Vitamin C 1000mg',
+    description: 'Supports standard immune health and antioxidant cellular defense. Made from organic extracts.',
+    category_slug: 'wellness',
+    price: 1850,
+    unit: '30 Tablets',
+    image_url: 'https://images.unsplash.com/photo-1616679911721-ebd6eec18fcd?w=500&auto=format&fit=crop&q=80',
+    popular: false,
+    is_flash_deal: false,
+    stock: 25,
+    rating: 4.7,
+    reviews_count: 34,
+    is_active: true,
+    created_at: new Date().toISOString()
+  },
+  // Baby Care Products
+  {
+    id: 'baby_diapers',
+    name: 'Huggies Dry Diapers Size 3',
+    description: 'Offers overnight leakage lock with super absorbent core. Premium soft skin design.',
+    category_slug: 'diapers',
+    price: 2950,
+    unit: '24 Pack',
+    image_url: 'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=500&auto=format&fit=crop&q=80',
+    popular: true,
+    is_flash_deal: false,
+    stock: 15,
+    rating: 4.8,
+    reviews_count: 57,
+    is_active: true,
+    created_at: new Date().toISOString()
+  },
+  // Bakery Products
+  {
+    id: 'bak_cake',
+    name: 'Zippi Fresh Butter Cake',
+    description: 'Freshly baked traditional moist rich butter cake. Perfect with evening milk tea.',
+    category_slug: 'cakes-pastries',
+    price: 950,
+    unit: '500g',
+    image_url: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=500&auto=format&fit=crop&q=80',
+    popular: false,
+    is_flash_deal: false,
+    stock: 10,
+    rating: 4.6,
+    reviews_count: 22,
+    is_active: true,
+    created_at: new Date().toISOString()
+  },
+  // Fancy & Cosmetics
+  {
+    id: 'cos_moisturizer',
+    name: 'Cetaphil Hydrating Moisturizer',
+    description: 'Dermatologist recommended daily facial and body moisturizer for dry, sensitive skin.',
+    category_slug: 'skincare',
+    price: 3450,
+    unit: '100ml',
+    image_url: 'https://images.unsplash.com/photo-1608248597481-496100c80836?w=500&auto=format&fit=crop&q=80',
+    popular: true,
+    is_flash_deal: false,
+    stock: 18,
+    rating: 4.9,
+    reviews_count: 140,
+    is_active: true,
+    created_at: new Date().toISOString()
+  },
+  // Masala Products
+  {
+    id: 'mas_curry',
+    name: 'Jaffna Roasted Curry Powder',
+    description: 'Authentic rich roasted blend of pure Sri Lankan spices. Perfect for meats and curries.',
+    category_slug: 'spices-powders',
+    price: 380,
+    unit: '200g',
+    image_url: 'https://images.unsplash.com/photo-1596797038530-2c107229654b?w=500&auto=format&fit=crop&q=80',
+    popular: true,
+    is_flash_deal: false,
+    stock: 45,
+    rating: 4.8,
+    reviews_count: 76,
+    is_active: true,
+    created_at: new Date().toISOString()
+  },
+  // Car Rental
+  {
+    id: 'car_alto',
+    name: 'Suzuki Alto (Self-Drive)',
+    description: 'Efficient, compact hatchback car for easy city travel. Unlimited mileage daily options.',
+    category_slug: 'hatchback',
+    price: 6500,
+    unit: 'Per Day',
+    image_url: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=500&auto=format&fit=crop&q=80',
+    popular: false,
+    is_flash_deal: false,
+    stock: 5,
+    rating: 4.5,
+    reviews_count: 12,
+    is_active: true,
+    created_at: new Date().toISOString()
   }
 ];
 
@@ -656,8 +825,9 @@ const InMemoryDb = {
   },
 
   banners: {
-    findAll: async () => {
-      return banners.filter(b => b.is_active).sort((a, b) => a.sort_order - b.sort_order);
+    findAll: async (all = false) => {
+      const list = all ? banners : banners.filter(b => b.is_active);
+      return list.sort((a, b) => a.sort_order - b.sort_order);
     },
     create: async (banner) => {
       const newBanner = {

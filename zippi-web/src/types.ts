@@ -17,6 +17,7 @@ export interface Product {
   stock: number;
   rating: number;
   reviewsCount: number;
+  isFlashDeal?: boolean;
 }
 
 export interface CartItem {
@@ -52,4 +53,6 @@ export interface Category {
   id: string;
   name: string;
   icon: string; // Lucide icon name
+  parentSlug?: string;
+  parent_slug?: string;
 }

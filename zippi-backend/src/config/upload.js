@@ -13,7 +13,7 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB limit
+    fileSize: 50 * 1024 * 1024 // 50MB limit
   },
   fileFilter: fileFilter
 });
@@ -60,12 +60,21 @@ const uploadToSupabase = async (file, bucketName = 'zippi-media') => {
 
     return urlData.publicUrl;
   } catch (err) {
-    console.error('Supabase Storage upload error:', err.message);
-    
-    // Fallback: If Supabase connection fails, generate a mock or local URL for testing
-    // We can return a Data URL or just a placeholder since this is offline/testing mode
-    const base64Data = file.buffer.toString('base64');
-    return `data:${file.mimetype};base64,${base64Data}`;
+    console.error('Supabase Storage upload error:', err.message, '- falling back to local disk storage');
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const uploadsDir = path.join(__dirname, '../../public/uploads');
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+      fs.writeFileSync(path.join(uploadsDir, filename), file.buffer);
+      return `http://localhost:3001/uploads/${filename}`;
+    } catch (localErr) {
+      console.error('Local file write error, falling back to base64:', localErr.message);
+      const base64Data = file.buffer.toString('base64');
+      return `data:${file.mimetype};base64,${base64Data}`;
+    }
   }
 };
 

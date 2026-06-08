@@ -32,6 +32,42 @@ export const uploadProductImage = async (
   const supabase = getSupabaseClient();
 
   if (!supabase) {
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+      
+      const token = localStorage.getItem("zippi_admin_token");
+      
+      let prog = 10;
+      const progressInterval = setInterval(() => {
+        prog += 20;
+        if (onProgress) onProgress(Math.min(prog, 90));
+      }, 80);
+
+      const response = await fetch("http://localhost:3001/api/admin/upload", {
+        method: "POST",
+        headers: {
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
+        body: formData
+      });
+      
+      clearInterval(progressInterval);
+      if (onProgress) onProgress(100);
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.url) {
+          return {
+            url: result.url,
+            isFallback: false
+          };
+        }
+      }
+    } catch (err) {
+      console.warn("Backend server upload failed. Falling back to local Base64 storage.", err);
+    }
+
     // Fallback: Read as base64 so it can persist inside localStorage
     return new Promise((resolve, reject) => {
       const reader = new FileReader();

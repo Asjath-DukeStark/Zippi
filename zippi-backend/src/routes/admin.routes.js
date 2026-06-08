@@ -19,9 +19,25 @@ router.patch('/categories/:id', adminController.updateCategory);
 router.delete('/categories/:id', adminController.deleteCategory);
 
 // Banners CRUD
+router.get('/banners', adminController.getBanners);
 router.post('/banners', upload.single('image'), adminController.createBanner);
 router.patch('/banners/:id', upload.single('image'), adminController.updateBanner);
 router.delete('/banners/:id', adminController.deleteBanner);
+
+// Generic upload endpoint
+router.post('/upload', upload.single('image'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'No file uploaded' });
+  }
+  const { uploadToSupabase } = require('../config/upload');
+  uploadToSupabase(req.file)
+    .then(url => {
+      res.json({ success: true, url });
+    })
+    .catch(err => {
+      res.status(500).json({ success: false, message: err.message });
+    });
+});
 
 // Orders management
 router.get('/orders', adminController.getAdminOrders);

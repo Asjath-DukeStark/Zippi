@@ -125,22 +125,22 @@ export function getCategoryFallbackDetails(idOrName: string) {
   let emoji = '🛒';
   let gradient = 'from-amber-100 to-amber-200 text-amber-700';
 
-  if (id.includes('veggie') || id.includes('produce') || id.includes('fruit') || id.includes('crop')) {
+  if (id.includes('veggie') || id.includes('produce') || id.includes('fruit') || id.includes('crop') || id.includes('grocery')) {
     emoji = '🥦';
     gradient = 'from-emerald-50 to-emerald-150 text-emerald-600';
   } else if (id.includes('dairy') || id.includes('egg') || id.includes('milk')) {
     emoji = '🥛';
     gradient = 'from-blue-50 to-blue-150 text-blue-600';
-  } else if (id.includes('meat') || id.includes('seafood') || id.includes('fish')) {
+  } else if (id.includes('meat') || id.includes('seafood') || id.includes('fish') || id.includes('chicken')) {
     emoji = '🥩';
     gradient = 'from-red-50 to-red-150 text-red-600';
-  } else if (id.includes('bakery') || id.includes('bread')) {
+  } else if (id.includes('bakery') || id.includes('bread') || id.includes('pastry') || id.includes('cake')) {
     emoji = '🍞';
     gradient = 'from-orange-50 to-orange-150 text-amber-800';
-  } else if (id.includes('beverage') || id.includes('drink') || id.includes('soda')) {
+  } else if (id.includes('beverage') || id.includes('drink') || id.includes('soda') || id.includes('juice')) {
     emoji = '🥤';
     gradient = 'from-cyan-50 to-cyan-150 text-cyan-600';
-  } else if (id.includes('snack') || id.includes('chip') || id.includes('sweet') || id.includes('chocolate') || id.includes('candy')) {
+  } else if (id.includes('snack') || id.includes('chip') || id.includes('sweet') || id.includes('chocolate') || id.includes('candy') || id.includes('cookie')) {
     emoji = '🍿';
     gradient = 'from-amber-50 to-amber-150 text-amber-700';
   } else if (id.includes('frozen')) {
@@ -149,10 +149,10 @@ export function getCategoryFallbackDetails(idOrName: string) {
   } else if (id.includes('cleaning') || id.includes('home') || id.includes('detergent')) {
     emoji = '🧹';
     gradient = 'from-violet-50 to-violet-150 text-violet-600';
-  } else if (id.includes('personal') || id.includes('care') || id.includes('health') || id.includes('hygiene')) {
-    emoji = '🧴';
-    gradient = 'from-teal-50 to-teal-150 text-teal-600';
-  } else if (id.includes('baby') || id.includes('kid') || id.includes('child')) {
+  } else if (id.includes('pharmacy') || id.includes('medicine') || id.includes('pill') || id.includes('first-aid') || id.includes('health')) {
+    emoji = '💊';
+    gradient = 'from-rose-50 to-rose-150 text-rose-600';
+  } else if (id.includes('baby') || id.includes('kid') || id.includes('child') || id.includes('diaper')) {
     emoji = '🧸';
     gradient = 'from-pink-50 to-pink-150 text-pink-600';
   } else if (id.includes('breakfast') || id.includes('cereal') || id.includes('oat')) {
@@ -161,12 +161,18 @@ export function getCategoryFallbackDetails(idOrName: string) {
   } else if (id.includes('canned') || id.includes('dry') || id.includes('tin') || id.includes('pack')) {
     emoji = '🥫';
     gradient = 'from-rose-100 to-rose-200 text-rose-700';
-  } else if (id.includes('pantry') || id.includes('oil') || id.includes('condiment') || id.includes('spice')) {
+  } else if (id.includes('pantry') || id.includes('oil') || id.includes('condiment')) {
     emoji = '🫙';
     gradient = 'from-amber-50 to-orange-100 text-amber-700';
-  } else if (id.includes('sweet') || id.includes('chocolate')) {
-    emoji = '🍫';
-    gradient = 'from-red-100 to-red-200 text-red-700';
+  } else if (id.includes('masala') || id.includes('spice') || id.includes('curry') || id.includes('seasoning') || id.includes('flame')) {
+    emoji = '🌶️';
+    gradient = 'from-orange-50 to-orange-150 text-orange-600';
+  } else if (id.includes('car-rental') || id.includes('car') || id.includes('vehicle') || id.includes('rent')) {
+    emoji = '🚗';
+    gradient = 'from-slate-50 to-slate-150 text-slate-600';
+  } else if (id.includes('cosmetics') || id.includes('makeup') || id.includes('fancy') || id.includes('skincare') || id.includes('haircare')) {
+    emoji = '✨';
+    gradient = 'from-purple-50 to-purple-150 text-purple-600';
   }
 
   return { emoji, gradient };

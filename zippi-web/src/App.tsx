@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { 
   Home, 
   Layers, 
@@ -81,34 +81,27 @@ const BRANDS_OPTIONS = [
 ];
 
 const HOME_CATEGORIES = [
-  { id: 'veggies', name: 'Fresh Produce', emoji: '🥦', image: '/category-veggies.png', sale: true },
-  { id: 'dairy', name: 'Dairy & Eggs', emoji: '🥛', image: '/category-dairy.png', sale: false },
-  { id: 'meats', name: 'Meat & Seafood', emoji: '🥩', image: '/category-meats.png', sale: false },
-  { id: 'bakery', name: 'Bakery', emoji: '🍞', image: '/category-bakery.png', sale: false },
-  { id: 'beverages', name: 'Beverages', emoji: '🧃', image: '/category-beverages.png', sale: false },
-  { id: 'snacks', name: 'Snacks', emoji: '🍿', image: '/category-snacks.png', sale: false },
-  { id: 'frozen', name: 'Frozen', emoji: '❄️', image: '/category-frozen.png', sale: true },
-  { id: 'cleaning', name: 'Cleaning', emoji: '🧹', image: '/category-cleaning.png', sale: false },
+  { id: 'grocery', name: 'Grocery', emoji: '🍎', image: '/category-veggies.png', sale: true },
+  { id: 'pharmacy', name: 'Pharmacy', emoji: '💊', image: '/category-personal.png', sale: false },
+  { id: 'baby-care', name: 'Baby Care', emoji: '🍼', image: '/category-baby.png', sale: false },
+  { id: 'meat', name: 'Meat', emoji: '🥩', image: '/category-meats.png', sale: false },
+  { id: 'bakery-main', name: 'Bakery', emoji: '🥐', image: '/category-bakery.png', sale: false },
+  { id: 'fancy-cosmetics', name: 'Fancy & Cosmetics', emoji: '✨', image: '/category-sweets.png', sale: false },
+  { id: 'masala', name: 'Masala', emoji: '🌶️', image: '/category-pantry.png', sale: true },
+  { id: 'car-rental', name: 'Car Rental', emoji: '🚗', image: '/category-frozen.png', sale: false },
 ];
 
 const BRANDS_LIST = ['All', 'Kotmale', 'Pelwatte', 'Araliya', 'Dilmah'];
 
 const DETAILED_CATEGORIES = [
-  { id: 'veggies', name: 'Fresh Produce', image: '/category-veggies.png' },
-  { id: 'dairy', name: 'Dairy & Eggs', image: '/category-dairy.png' },
-  { id: 'meats', name: 'Meat & Seafood', image: '/category-meats.png' },
-  { id: 'bakery', name: 'Bakery & Bread', image: '/category-bakery.png' },
-  { id: 'beverages', name: 'Beverages', image: '/category-beverages.png' },
-  { id: 'snacks', name: 'Snacks & Chips', image: '/category-snacks.png' },
-  { id: 'frozen', name: 'Frozen Foods', image: '/category-frozen.png' },
-  { id: 'cleaning', name: 'Cleaning & Home', image: '/category-cleaning.png' },
-  { id: 'personal', name: 'Personal Care', image: '/category-personal.png' },
-  { id: 'baby', name: 'Baby & Kids', image: '/category-baby.png' },
-  { id: 'breakfast', name: 'Breakfast', image: '/category-breakfast.png' },
-  { id: 'canned', name: 'Canned & Dry Goods', image: '/category-canned.png' },
-  { id: 'pantry', name: 'Oils & Condiments', image: '/category-pantry.png' },
-  { id: 'sweets', name: 'Sweets & Chocolates', image: '/category-sweets.png' },
-  { id: 'health', name: 'Health Foods', image: '/category-health.png' }
+  { id: 'grocery', name: 'Grocery', image: '/category-veggies.png' },
+  { id: 'pharmacy', name: 'Pharmacy', image: '/category-personal.png' },
+  { id: 'baby-care', name: 'Baby Care', image: '/category-baby.png' },
+  { id: 'meat', name: 'Meat', image: '/category-meats.png' },
+  { id: 'bakery-main', name: 'Bakery', image: '/category-bakery.png' },
+  { id: 'fancy-cosmetics', name: 'Fancy & Cosmetics', image: '/category-sweets.png' },
+  { id: 'masala', name: 'Masala', image: '/category-pantry.png' },
+  { id: 'car-rental', name: 'Car Rental', image: '/category-frozen.png' },
 ];
 
 // Define list of IDs for home marquee sections
@@ -219,6 +212,19 @@ export default function App() {
   // Filter conditions & text searching states
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTabCategory, setSelectedTabCategory] = useState<string>('grocery');
+
+  // Group DETAILED_CATEGORIES into rows of 3 for the accordion grid structure
+  const categoryRows = useMemo(() => {
+    const rows: (typeof DETAILED_CATEGORIES)[] = [];
+    const size = 3;
+    for (let i = 0; i < DETAILED_CATEGORIES.length; i += size) {
+      rows.push(DETAILED_CATEGORIES.slice(i, i + size));
+    }
+    return rows;
+  }, []);
+
+
   
   // Header Switch/Feature States
   const [fastDeliveryFilter, setFastDeliveryFilter] = useState(true); // default active as yellow
@@ -567,7 +573,7 @@ export default function App() {
 
   // Calculate separate list values for sections
   const bestsellerProducts = products.filter(p => p.popular);
-  const freshTodayProducts = products.filter(p => p.category === 'veggies' || p.category === 'fruits' || p.category === 'dairy');
+  const freshTodayProducts = products.filter(p => p.category === 'fruits-veggies' || p.category === 'dairy');
 
   const trendingProductsMapped = TRENDING_IDS.map(id => products.find(p => p.id === id)).filter((p): p is Product => !!p);
   const trendingProductsList = trendingProductsMapped.length > 0 
@@ -577,7 +583,7 @@ export default function App() {
   const freshProductsMapped = FRESH_IDS.map(id => products.find(p => p.id === id)).filter((p): p is Product => !!p);
   const freshProductsList = freshProductsMapped.length > 0 
     ? freshProductsMapped 
-    : products.filter(p => p.category === 'veggies' || p.category === 'fruits' || p.category === 'dairy').slice(0, 10);
+    : products.filter(p => p.category === 'fruits-veggies' || p.category === 'dairy').slice(0, 10);
 
   const flashProductsMapped = FLASH_IDS.map(id => products.find(p => p.id === id)).filter((p): p is Product => !!p);
   const flashProductsList = flashProductsMapped.length > 0 
@@ -1195,7 +1201,7 @@ export default function App() {
                 
                 <input
                   type="text"
-                  placeholder="Search groceries..."
+                  placeholder="What are you looking for?"
                   value={searchQuery}
                   onFocus={() => setIsSearchFocused(true)}
                   onBlur={() => setTimeout(() => setIsSearchFocused(false), 220)}
@@ -1217,42 +1223,114 @@ export default function App() {
               </div>
             </div>
 
-            {/* ── PAGE TITLE ── */}
-            <div className="px-4 pb-2 text-left" id="categories-page-title-container">
-              <h1 className="text-[20px] font-bold text-[#1A1A1A] mt-2">Categories</h1>
-            </div>
-
-            {/* ── CATEGORIES GRID — 3 columns ── */}
-            <div className="px-4 pb-6" id="categories-grid-container">
-              <div className="grid grid-cols-3 gap-3">
-                {DETAILED_CATEGORIES.map((cat) => (
-                  <div
-                    key={cat.id}
-                    onClick={() => {
-                      setBrowsingCategory(cat.id);
-                    }}
-                    className="bg-[#F5F5F5] rounded-[12px] p-3 flex flex-col justify-between items-center text-center cursor-pointer border border-transparent transition-all hover:border-[#F5C518] active:scale-95 h-[135px]"
-                    id={`category-card-${cat.id}`}
-                  >
-                    {/* Product image fills top 70% of card (object-fit: contain) */}
-                    <div className="w-full h-[70%] flex items-center justify-center overflow-hidden">
-                      <ZippiCategoryImage 
-                        image={cat.image} 
-                        name={cat.name} 
-                        id={cat.id}
-                        imageClassName="w-full h-full object-contain max-h-[64px] transition-transform duration-300 hover:scale-110" 
-                        emojiClassName="text-4xl"
-                      />
+            {/* ── CATEGORIES ROW-WISE ACCORDION GRID ── */}
+            <div className="px-4 pt-2 pb-12 space-y-3" id="categories-accordion-container">
+              {categoryRows.map((row, rowIndex) => {
+                const hasSelectedCategory = row.some((cat) => cat.id === selectedTabCategory);
+                return (
+                  <div key={rowIndex} className="space-y-3">
+                    {/* The Grid Row */}
+                    <div className="grid grid-cols-3 gap-2.5">
+                      {row.map((cat) => {
+                        const isSelected = selectedTabCategory === cat.id;
+                        return (
+                          <div
+                            key={cat.id}
+                            onClick={() => {
+                              setSelectedTabCategory(cat.id);
+                            }}
+                            className={`rounded-2xl p-2.5 flex flex-col justify-between items-center text-center cursor-pointer border transition-all duration-200 active:scale-95 h-[115px] ${
+                              isSelected 
+                                ? 'bg-white border-gray-300 shadow-sm ring-1 ring-gray-150' 
+                                : 'bg-[#F9F9F9] border-transparent hover:border-gray-200'
+                            }`}
+                            id={`category-card-${cat.id}`}
+                          >
+                            {/* Product image fills top of card */}
+                            <div className="w-full h-[65%] flex items-center justify-center overflow-hidden">
+                              <ZippiCategoryImage 
+                                image={cat.image} 
+                                name={cat.name} 
+                                id={cat.id}
+                                imageClassName="w-full h-full object-contain max-h-[50px] transition-transform duration-300 hover:scale-110" 
+                                emojiClassName="text-3xl"
+                              />
+                            </div>
+                            {/* Category name below image */}
+                            <div className="h-[35%] flex items-center justify-center w-full mt-0.5">
+                              <span className="text-[12px] leading-tight font-extrabold text-brand-charcoal line-clamp-2">
+                                {cat.name}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                    {/* Category name below image (14px, bold, dark) */}
-                    <div className="h-[30%] flex items-center justify-center w-full mt-1">
-                      <span className="text-[14px] leading-tight font-bold text-[#1A1A1A] line-clamp-2">
-                        {cat.name}
-                      </span>
+
+                    {/* Subcategories Container under this row if it contains the selected category */}
+                    <div 
+                      className={`accordion-container ${hasSelectedCategory ? 'expanded' : 'pointer-events-none'}`}
+                    >
+                      <div className="h-[1px] bg-gray-150 mb-3" />
+                      <div 
+                        key={selectedTabCategory} 
+                        className="animate-fade-in flex flex-col"
+                      >
+                        {CATEGORIES.filter(c => c.parentSlug === selectedTabCategory || c.parent_slug === selectedTabCategory).map((sub) => {
+                          const repProduct = products.find(p => p.category === sub.id);
+                          return (
+                            <div
+                              key={sub.id}
+                              onClick={() => {
+                                setBrowsingCategory(sub.id);
+                              }}
+                              className="bg-[#F5F5F7] hover:bg-gray-100 rounded-[14px] p-3 flex items-center justify-between cursor-pointer transition-all active:scale-[0.98] mb-2.5 border border-gray-100/50"
+                            >
+                              <div className="flex items-center gap-3.5">
+                                {/* Representative Image Container */}
+                                <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center p-2 overflow-hidden border border-gray-150 shrink-0 shadow-2xs">
+                                  {repProduct ? (
+                                    <img 
+                                      src={repProduct.image} 
+                                      alt={sub.name} 
+                                      className="w-full h-full object-contain"
+                                    />
+                                  ) : (
+                                    <span className="text-xl">📦</span>
+                                  )}
+                                </div>
+                                {/* Subcategory name */}
+                                <span className="text-[13.5px] font-extrabold text-[#1A1A1A] text-left">
+                                  {sub.name}
+                                </span>
+                              </div>
+                              <ChevronRight className="w-4 h-4 text-gray-400" />
+                            </div>
+                          );
+                        })}
+
+                        {/* View all subcategory button */}
+                        <div
+                          onClick={() => {
+                            setBrowsingCategory(selectedTabCategory);
+                          }}
+                          className="bg-[#F5F5F7] hover:bg-gray-100 rounded-[14px] p-3 flex items-center justify-between cursor-pointer transition-all active:scale-[0.98] border border-gray-100/50"
+                        >
+                          <div className="flex items-center gap-3.5">
+                            <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center p-3 overflow-hidden border border-gray-150 shrink-0 text-gray-600 shadow-2xs">
+                              <Layers className="w-5 h-5" />
+                            </div>
+                            <span className="text-[13.5px] font-extrabold text-[#1A1A1A] text-left">
+                              View all
+                            </span>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-gray-400" />
+                        </div>
+                      </div>
                     </div>
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
 
           </div>

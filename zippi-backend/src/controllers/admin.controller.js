@@ -327,6 +327,19 @@ const getDashboardStats = async (req, res, next) => {
   }
 };
 
+const getBanners = async (req, res, next) => {
+  try {
+    const banners = await db.banners.findAll(true);
+    return res.status(200).json({
+      success: true,
+      data: banners,
+      message: 'All banners fetched for admin'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createProduct,
   updateProduct,
@@ -337,6 +350,7 @@ module.exports = {
   createBanner,
   updateBanner,
   deleteBanner,
+  getBanners,
   getAdminOrders,
   assignRider,
   getSalesReport,
