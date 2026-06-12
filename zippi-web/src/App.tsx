@@ -1473,25 +1473,25 @@ export default function App() {
                               onClick={() => {
                                 setSelectedMainCategory(isSelected ? null : cat.slug);
                               }}
-                              className={`rounded-[16px] p-2.5 flex flex-col justify-between items-center text-center cursor-pointer transition-all duration-250 active:scale-95 h-[120px] select-none ${
-                                isSelected 
-                                  ? 'bg-white border-2 border-[#1A1A1A] shadow-md ring-2 ring-[#FCE000]/15' 
-                                  : 'bg-[#F9FAFB] border border-gray-100 hover:bg-gray-100 hover:border-gray-200'
-                              }`}
+                              className="flex flex-col cursor-pointer select-none transition-all duration-250 active:scale-95 text-left group"
                               id={`category-card-${cat.slug}`}
                             >
-                              {/* Product image fills top 65% of card */}
-                              <div className="w-full h-[65%] flex items-center justify-center overflow-hidden">
+                              {/* Rounded image container matching screenshot */}
+                              <div className={`w-full aspect-[4/5] rounded-[24px] bg-[#F0F3F9] flex items-center justify-center overflow-hidden transition-all ${
+                                isSelected 
+                                  ? 'ring-2 ring-offset-2 ring-[#1A1A1A] shadow-md bg-white' 
+                                  : 'border border-transparent hover:border-slate-200'
+                              }`}>
                                 <img 
-                                  src={cat.imageUrl || 'https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=120&auto=format&fit=crop&q=80'} 
+                                  src={cat.imageUrl || 'https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=150&auto=format&fit=crop&q=80'} 
                                   alt={cat.name} 
-                                  className="w-full h-full object-contain transition-transform duration-300 hover:scale-110" 
+                                  className="w-full h-full object-contain p-2.5 transition-transform duration-300 group-hover:scale-105" 
                                   referrerPolicy="no-referrer"
                                 />
                               </div>
-                              {/* Category name below image */}
-                              <div className="h-[35%] flex items-center justify-center w-full mt-1">
-                                <span className="text-[11.5px] leading-tight font-extrabold text-[#1A1A1A] line-clamp-2">
+                              {/* Category name below image container */}
+                              <div className="mt-2 px-1 min-h-[36px]">
+                                <span className="text-[12px] leading-tight font-extrabold text-slate-800 line-clamp-2">
                                   {cat.name}
                                 </span>
                               </div>
@@ -1533,12 +1533,12 @@ export default function App() {
                                         setBrowsingCategory(sub.slug);
                                       }
                                     }}
-                                    className="bg-[#F4F5F8] hover:bg-[#EAECF0] active:bg-[#E2E5EA] rounded-[20px] px-4 py-3 flex items-center justify-between cursor-pointer transition-all duration-150 active:scale-[0.99] group text-left h-[78px]"
+                                    className="bg-[#F4F5F8] hover:bg-[#EAECF0] active:bg-[#E2E5EA] rounded-[20px] px-4 py-3 flex items-center justify-between cursor-pointer transition-all duration-150 active:scale-[0.99] group text-left h-[92px]"
                                     id={`subcat-row-${sub.slug}-${idx}`}
                                   >
                                     <div className="flex items-center gap-4">
                                       {/* Left icon wrapper */}
-                                      <div className="w-12 h-12 bg-white rounded-[14px] border border-[#1A1A1A] flex items-center justify-center overflow-hidden shrink-0 transition-transform duration-200 group-hover:scale-105 shadow-2xs">
+                                      <div className="w-16 h-16 bg-white rounded-[14px] border border-[#1A1A1A] flex items-center justify-center overflow-hidden shrink-0 transition-transform duration-200 group-hover:scale-105 shadow-2xs">
                                         {sub.imageUrl ? (
                                           <img
                                             src={sub.imageUrl}
@@ -1549,14 +1549,14 @@ export default function App() {
                                         ) : sub.icon === 'layers' ? (
                                           <Layers className="w-[18px] h-[18px] text-[#2D3142]" />
                                         ) : (
-                                          <span className="text-[19px] filter drop-shadow-xs leading-none">
+                                          <span className="text-[26px] filter drop-shadow-xs leading-none">
                                             {sub.icon || '📦'}
                                           </span>
                                         )}
                                       </div>
                                       
                                       {/* Subcategory Name */}
-                                      <span className="text-[14.5px] font-extrabold text-[#1A1A1A]">
+                                      <span className="text-[15.5px] font-extrabold text-[#1A1A1A]">
                                         {sub.name}
                                       </span>
                                     </div>
