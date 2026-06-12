@@ -1538,8 +1538,15 @@ export default function App() {
                                   >
                                     <div className="flex items-center gap-4">
                                       {/* Left icon wrapper */}
-                                      <div className="w-12 h-12 bg-white rounded-[14px] border border-[#1A1A1A] flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105 shadow-2xs">
-                                        {sub.icon === 'layers' ? (
+                                      <div className="w-12 h-12 bg-white rounded-[14px] border border-[#1A1A1A] flex items-center justify-center overflow-hidden shrink-0 transition-transform duration-200 group-hover:scale-105 shadow-2xs">
+                                        {sub.imageUrl ? (
+                                          <img
+                                            src={sub.imageUrl}
+                                            alt={sub.name}
+                                            className="w-full h-full object-contain p-1"
+                                            referrerPolicy="no-referrer"
+                                          />
+                                        ) : sub.icon === 'layers' ? (
                                           <Layers className="w-[18px] h-[18px] text-[#2D3142]" />
                                         ) : (
                                           <span className="text-[19px] filter drop-shadow-xs leading-none">
