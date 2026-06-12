@@ -1,5 +1,4 @@
 const { fail } = require('../utils/response');
-const env = require('../config/env');
 
 const notFound = (req, res) =>
   fail(res, `API route not found: ${req.method} ${req.originalUrl}`, 404, 'ROUTE_NOT_FOUND');
@@ -10,7 +9,7 @@ const errorHandler = (err, req, res, next) => {
   if (status >= 500) console.error('[error]', err);
   return fail(
     res,
-    status >= 500 && env.nodeEnv === 'production' ? 'Internal server error' : err.message,
+    err.message,
     status,
     err.code || (status >= 500 ? 'INTERNAL_ERROR' : undefined)
   );
