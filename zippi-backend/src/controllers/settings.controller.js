@@ -3,7 +3,11 @@ const { ok, ApiError } = require('../utils/response');
 
 const DEFAULTS = {
   store: { name: 'Zippi', currency: 'AED', supportPhone: '', supportEmail: '', isOpen: true },
-  delivery: { deliveryFee: 4.99, freeDeliveryAbove: 99, etaMinutes: 30, serviceRadiusKm: 15 }
+  delivery: { deliveryFee: 4.99, freeDeliveryAbove: 99, etaMinutes: 30, serviceRadiusKm: 15 },
+  filters: {
+    deals: ['Grand Lifestyle Sale', 'Mega Deal 📣', 'Eid Deal 🌙', 'Deal'],
+    brands: ['Sebamed', 'Aveeno', 'Cool & Cool', 'HUGGIES', 'Pampers', 'BabyJoy', 'Mustela', 'Rubies', 'Generic', 'Sage Square', 'Kotmale', 'Pelwatte', 'Araliya', 'Dilmah', 'Harischandra']
+  }
 };
 
 /** GET /api/settings — public store settings (web/mobile read store config) */
@@ -14,7 +18,8 @@ exports.getPublic = async (req, res, next) => {
     const stored = Object.fromEntries((data || []).map((r) => [r.key, r.value]));
     return ok(res, {
       store: { ...DEFAULTS.store, ...(stored.store || {}) },
-      delivery: { ...DEFAULTS.delivery, ...(stored.delivery || {}) }
+      delivery: { ...DEFAULTS.delivery, ...(stored.delivery || {}) },
+      filters: { ...DEFAULTS.filters, ...(stored.filters || {}) }
     });
   } catch (err) { next(err); }
 };

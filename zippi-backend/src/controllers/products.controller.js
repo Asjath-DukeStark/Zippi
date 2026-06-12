@@ -90,3 +90,57 @@ exports.remove = async (req, res, next) => {
     return ok(res, { deleted: true });
   } catch (err) { next(err); }
 };
+
+/** POST /api/admin/products/import */
+exports.importExcel = async (req, res, next) => {
+  try {
+    if (!req.file) throw new ApiError('No file uploaded', 400, 'BAD_REQUEST');
+    
+    const xlsx = require('xlsx');
+    const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const data = xlsx.utils.sheet_to_json(sheet);
+
+    if (data.length === 0) {
+      throw new ApiError('Excel file is empty', 400, 'EMPTY_FILE');
+    }
+
+    const productsToInsert = data.map(row => {
+      const name = row.name || row.Name || '';
+      const description = row.description || row.Description || null;
+      const categorySlug = row.category_slug || row.category || row.Category || '';
+      const price = Number(row.price || row.Price || 0);
+      const originalPrice = row.original_price || row.OriginalPrice || null;
+      const discountPercent = row.discount_percent || null;
+      const unit = row.unit || row.Unit || '1 piece';
+      const popular = row.popular === true || row.popular === 'TRUE' || row.popular === 'true';
+      const isFlashDeal = row.is_flash_deal === 'true' || row.is_flash_deal === 'TRUE' || row.is_flash_deal === true;
+      const stock = row.stock ? parseInt(row.stock, 10) : 0;
+      const isActive = row.is_active !== false && row.is_active !== 'FALSE' && row.is_active !== 'false';
+
+      return {
+        name,
+        description,
+        category_slug: categorySlug,
+        price,
+        original_price: originalPrice ? Number(originalPrice) : null,
+        discount_percent: discountPercent ? Number(discountPercent) : null,
+        unit,
+        popular,
+        is_flash_deal: isFlashDeal,
+        stock,
+        is_active: isActive
+      };
+    }).filter(p => p.name);
+
+    if (productsToInsert.length === 0) {
+      throw new ApiError('No valid products found in file', 400, 'INVALID_DATA');
+    }
+
+    const { data: inserted, error } = await supabase.from('products').insert(productsToInsert).select('*');
+    if (error) throw new ApiError(error.message, 500, 'DB_ERROR');
+
+    return ok(res, { importedCount: inserted ? inserted.length : productsToInsert.length });
+  } catch (err) { next(err); }
+};

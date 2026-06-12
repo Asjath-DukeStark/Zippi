@@ -217,12 +217,37 @@ export default function App() {
     { id: 'car_rental_van', name: 'Vans & Buses', slug: 'car_rental_van', parentSlug: 'car_rental', icon: '🚐' }
   ]);
 
+  const [dealsOptions, setDealsOptions] = useState<string[]>([
+    "Grand Lifestyle Sale",
+    "Mega Deal 📣",
+    "Eid Deal 🌙",
+    "Deal"
+  ]);
+  const [brandsOptions, setBrandsOptions] = useState<string[]>([
+    "Sebamed",
+    "Aveeno",
+    "Cool & Cool",
+    "HUGGIES",
+    "Pampers",
+    "BabyJoy",
+    "Mustela",
+    "Rubies",
+    "Generic",
+    "Sage Square",
+    "Kotmale",
+    "Pelwatte",
+    "Araliya",
+    "Dilmah",
+    "Harischandra"
+  ]);
+
   useEffect(() => {
     const loadDynamicData = async () => {
       try {
-        const [catRes, prodRes] = await Promise.all([
+        const [catRes, prodRes, settingsRes] = await Promise.all([
           fetch('/api/categories'),
-          fetch('/api/products?limit=200')
+          fetch('/api/products?limit=200'),
+          fetch('/api/settings').catch(() => null)
         ]);
 
         if (catRes.ok) {
@@ -267,6 +292,15 @@ export default function App() {
               })) : undefined
             }));
             setActiveProducts(mapped);
+          }
+        }
+
+        if (settingsRes && settingsRes.ok) {
+          const settingsJson = await settingsRes.json();
+          if (settingsJson.success && settingsJson.data && settingsJson.data.filters) {
+            const filters = settingsJson.data.filters;
+            if (Array.isArray(filters.deals)) setDealsOptions(filters.deals);
+            if (Array.isArray(filters.brands)) setBrandsOptions(filters.brands);
           }
         }
       } catch (err) {
@@ -832,6 +866,9 @@ export default function App() {
           <ProductListingView
             browsingCategory={browsingCategory}
             onClose={() => setBrowsingCategory(null)}
+            categories={activeCategories}
+            dealsOptions={dealsOptions}
+            brandsOptions={brandsOptions}
             cart={cart}
             onAddToCart={handleAddToCart}
             onRemoveOne={handleRemoveOne}

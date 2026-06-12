@@ -5,7 +5,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { ArrowLeft, Search, ShoppingBag, Share2, Plus, Minus, Trash2, X, ChevronDown, Check, Sparkles } from 'lucide-react';
-import { Product, CartItem } from '../types';
+import { Product, CartItem, Category } from '../types';
 import { PRODUCTS } from '../data';
 import ProductCard from './ProductCard';
 import FilterBottomSheet from './FilterBottomSheet';
@@ -46,6 +46,9 @@ interface ProductListingViewProps {
   onToggleWishlist: (productId: string) => void;
   onOpenCart: () => void;
   products?: Product[];
+  categories?: Category[];
+  dealsOptions?: string[];
+  brandsOptions?: string[];
 }
 
 const DETAILED_CATEGORIES_LOCAL = [
@@ -79,6 +82,9 @@ export default function ProductListingView({
   onToggleWishlist,
   onOpenCart,
   products = PRODUCTS,
+  categories = [],
+  dealsOptions = DEALS_OPTIONS,
+  brandsOptions = BRANDS_OPTIONS,
 }: ProductListingViewProps) {
   // Filters State
   const [browseFastDelivery, setBrowseFastDelivery] = useState(true); // Default active (yellow)
@@ -111,12 +117,20 @@ export default function ProductListingView({
 
   // Category identity meta
   const currentCategory = useMemo(() => {
+    const found = categories.find(c => c.slug === browsingCategory || c.id === browsingCategory);
+    if (found) {
+      return {
+        id: found.slug || found.id,
+        name: found.name,
+        image: found.imageUrl || ''
+      };
+    }
     return DETAILED_CATEGORIES_LOCAL.find(c => c.id === browsingCategory) || {
       id: browsingCategory,
-      name: 'Fresh Produce',
+      name: browsingCategory,
       image: ''
     };
-  }, [browsingCategory]);
+  }, [browsingCategory, categories]);
 
   // Map category code to exact data products
   const categoryProductsRaw = useMemo(() => {
@@ -678,7 +692,7 @@ export default function ProductListingView({
         isOpen={activeFilterSheet === 'deals'}
         onClose={() => setActiveFilterSheet(null)}
         title="Deals"
-        options={DEALS_OPTIONS}
+        options={dealsOptions}
         initialSelected={selectedDealsList}
         onApply={(selected) => setSelectedDealsList(selected)}
         onClear={() => {
@@ -692,7 +706,7 @@ export default function ProductListingView({
         isOpen={activeFilterSheet === 'brand'}
         onClose={() => setActiveFilterSheet(null)}
         title="Brand"
-        options={BRANDS_OPTIONS}
+        options={brandsOptions}
         initialSelected={selectedBrandsList}
         onApply={(selected) => setSelectedBrandsList(selected)}
         onClear={() => {

@@ -4,17 +4,25 @@ import { PageLoader, ErrorBanner } from '../components/ui';
 
 interface StoreSettings { name: string; currency: string; supportPhone: string; supportEmail: string; isOpen: boolean; }
 interface DeliverySettings { deliveryFee: number; freeDeliveryAbove: number; etaMinutes: number; serviceRadiusKm: number; }
+interface FilterSettings { deals: string[]; brands: string[]; }
 
 export default function Settings() {
   const [store, setStore] = useState<StoreSettings | null>(null);
   const [delivery, setDelivery] = useState<DeliverySettings | null>(null);
+  const [dealsStr, setDealsStr] = useState('');
+  const [brandsStr, setBrandsStr] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    api.get<{ store: StoreSettings; delivery: DeliverySettings }>('/settings')
-      .then((d) => { setStore(d.store); setDelivery(d.delivery); })
+    api.get<{ store: StoreSettings; delivery: DeliverySettings; filters: FilterSettings }>('/settings')
+      .then((d) => { 
+        setStore(d.store); 
+        setDelivery(d.delivery); 
+        setDealsStr(d.filters?.deals?.join(', ') || '');
+        setBrandsStr(d.filters?.brands?.join(', ') || '');
+      })
       .catch((e) => setError(e.message));
   }, []);
 
@@ -32,6 +40,10 @@ export default function Settings() {
         etaMinutes: Number(delivery.etaMinutes),
         serviceRadiusKm: Number(delivery.serviceRadiusKm)
       });
+      const dealsArray = dealsStr.split(',').map(s => s.trim()).filter(Boolean);
+      const brandsArray = brandsStr.split(',').map(s => s.trim()).filter(Boolean);
+      await api.put('/admin/settings/filters', { deals: dealsArray, brands: brandsArray });
+      
       localStorage.setItem('zippi_currency', store.currency);
       setSaved('Settings saved successfully.');
     } catch (err: any) { setError(err.message); } finally { setBusy(false); }
@@ -90,6 +102,22 @@ export default function Settings() {
             <div>
               <label className="label">Service radius (km)</label>
               <input className="input" type="number" min="1" value={delivery.serviceRadiusKm} onChange={(e) => setDelivery({ ...delivery, serviceRadiusKm: Number(e.target.value) })} />
+            </div>
+          </div>
+        </div>
+
+        <div className="card space-y-4 p-5">
+          <h2 className="font-bold">Listing Filters</h2>
+          <div className="space-y-4">
+            <div>
+              <label className="label">Deals filters (comma-separated)</label>
+              <textarea className="input" rows={2} value={dealsStr} onChange={(e) => setDealsStr(e.target.value)} placeholder="Grand Lifestyle Sale, Mega Deal 📣, Eid Deal 🌙, Deal" />
+              <p className="text-[11px] text-slate-400 mt-1">Available choices in the "Deals" filter sidebar.</p>
+            </div>
+            <div>
+              <label className="label">Brands filters (comma-separated)</label>
+              <textarea className="input" rows={3} value={brandsStr} onChange={(e) => setBrandsStr(e.target.value)} placeholder="Sebamed, Aveeno, HUGGIES, Pampers" />
+              <p className="text-[11px] text-slate-400 mt-1">Available choices in the "Brand" filter sidebar.</p>
             </div>
           </div>
         </div>

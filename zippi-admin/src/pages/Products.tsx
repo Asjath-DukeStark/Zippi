@@ -1,5 +1,5 @@
-import { FormEvent, useEffect, useState } from 'react';
-import { Plus, Pencil, Trash2, Search, Eye, EyeOff, AlertTriangle } from 'lucide-react';
+import { FormEvent, useEffect, useState, useRef } from 'react';
+import { Plus, Pencil, Trash2, Search, Eye, EyeOff, AlertTriangle, Upload } from 'lucide-react';
 import { api } from '../lib/api';
 import type { Product, Category, Pagination } from '../lib/types';
 import { Modal, ConfirmDialog, PageLoader, ActiveBadge, EmptyState, ErrorBanner, fmtMoney } from '../components/ui';
@@ -30,6 +30,31 @@ export default function Products() {
   // Sorting state
   const [sortField, setSortField] = useState<string>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await api.post<{ importedCount: number }>('/admin/products/import', fd);
+      alert(`Successfully imported ${res.importedCount} products!`);
+      load();
+    } catch (err: any) {
+      setError(`Import error: ${err.message}`);
+    } finally {
+      setBusy(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   const load = () => {
     setLoading(true);
@@ -114,7 +139,23 @@ export default function Products() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-extrabold">Products</h1>
-        <button className="btn-primary" onClick={() => { setFormError(null); setEditing({ ...EMPTY }); }}><Plus className="h-4 w-4" /> Add product</button>
+        <div className="flex items-center gap-2">
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleImportFile} 
+            accept=".csv,.xlsx,.xls" 
+            className="hidden" 
+          />
+          <button 
+            className="btn-secondary flex items-center gap-1.5" 
+            onClick={handleImportClick}
+            disabled={busy}
+          >
+            <Upload className="h-4 w-4" /> {busy ? 'Importing…' : 'Import Excel / CSV'}
+          </button>
+          <button className="btn-primary flex items-center gap-1.5" onClick={() => { setFormError(null); setEditing({ ...EMPTY }); }}><Plus className="h-4 w-4" /> Add product</button>
+        </div>
       </div>
 
       {error && <ErrorBanner message={error} />}

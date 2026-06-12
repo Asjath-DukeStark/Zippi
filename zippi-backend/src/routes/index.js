@@ -86,6 +86,13 @@ admin.post('/products', validate([
   body('unit').isString().trim().notEmpty().withMessage('unit is required'),
   body('categorySlug').isString().trim().notEmpty().withMessage('categorySlug is required')
 ]), products.create);
+
+const docUpload = require('multer')({
+  storage: require('multer').memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }
+});
+admin.post('/products/import', docUpload.single('file'), products.importExcel);
+
 admin.patch('/products/:id', validate(productRules), products.update);
 admin.delete('/products/:id', products.remove);
 
