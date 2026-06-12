@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zippi Splash Screen</title>
+  
+  <!-- Font import from Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* Reset and base styles */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #FFFFFF;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Primary layout container */
+    .splash-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    /* Brand Row: Logo Icon and Wordmark */
+    .brand-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    /* STEP 1 — LOGO ICON (starts at 0.3s) */
+    .logo-box {
+      width: 64px;
+      height: 64px;
+      background-color: #F5C518;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transform: scale(0.6);
+      box-shadow: 0 4px 12px rgba(245, 197, 24, 0.15);
+      animation: logoIn 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      animation-delay: 0.3s;
+    }
+
+    /* STEP 2 — "Zippi" WORDMARK (starts at 0.9s) */
+    .wordmark-container {
+      display: inline-flex;
+      align-items: center;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: nameIn 0.8s ease-out forwards;
+      animation-delay: 0.9s;
+    }
+
+    .wordmark-svg {
+      display: block;
+    }
+
+    /* STEP 3 — SRI LANKA FLAG SWEEP (starts at 1.0s) */
+    .flag-sweep-group {
+      animation: flagSweep 1.8s ease-in-out infinite;
+      animation-delay: 1.0s;
+      transform: translateX(-110%);
+    }
+
+    /* STEP 4 & 5 — SLOGANS (starts at 1.7s & 1.9s) */
+    .slogans-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      margin-top: 36px;
+    }
+
+    .slogan {
+      padding: 10px 26px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+      opacity: 0;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Slogan 1: slides in FROM THE LEFT */
+    .slogan-left {
+      background-color: #1A1A1A;
+      color: #F5C518;
+      transform: translateX(-70px);
+      animation: tagFromLeft 0.7s cubic-bezier(0.34, 1.4, 0.64, 1) forwards;
+      animation-delay: 1.7s;
+    }
+
+    /* Slogan 2: slides in FROM THE RIGHT */
+    .slogan-right {
+      background-color: #F5C518;
+      color: #1A1A1A;
+      transform: translateX(70px);
+      animation: tagFromRight 0.7s cubic-bezier(0.34, 1.4, 0.64, 1) forwards;
+      animation-delay: 1.9s;
+    }
+
+    /* STEP 6 — BOTTOM TAGLINE (starts at 2.2s) */
+    .tagline {
+      font-size: 13px;
+      color: #888888;
+      font-weight: 500;
+      margin-top: 48px;
+      opacity: 0;
+      text-align: center;
+      animation: fadeUp 0.7s ease forwards;
+      animation-delay: 2.2s;
+    }
+
+    /* REPLAY BUTTON - Top-right corner of screen */
+    .replay-btn {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      background-color: #F5F5F5;
+      color: #1A1A1A;
+      border: none;
+      outline: none;
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+      z-index: 100;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .replay-btn:hover {
+      background-color: #EAEAEA;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+    }
+
+    .replay-btn:active {
+      transform: translateY(1px);
+    }
+
+    /* REDIRECT LOADING INDICATOR (starts at 3.0s) */
+    .loader-container {
+      position: absolute;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      opacity: 0;
+      animation: fadeUp 0.5s ease forwards;
+      animation-delay: 3.0s;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      background-color: #F5C518;
+      border-radius: 50%;
+      animation: pulseDot 1.2s infinite ease-in-out;
+    }
+
+    /* TOAST REDIRECT NOTIFICATION (Mocking navigate effect) */
+    .toast-alert {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translate(-50%, 20px);
+      background-color: #1A1A1A;
+      color: #FFFFFF;
+      font-size: 13px;
+      padding: 12px 20px;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease;
+      z-index: 1000;
+      pointer-events: none;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .toast-alert.show {
+      transform: translate(-50%, 0);
+      opacity: 1;
+    }
+
+    .toast-alert b {
+      color: #F5C518;
+    }
+
+    /* ════════════════════════════════════
+       FULL CSS KEYFRAMES
+       ════════════════════════════════════ */
+
+    /* @keyframes logoIn — scale + opacity for logo */
+    @keyframes logoIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.6);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    /* @keyframes nameIn — translateY + opacity for wordmark */
+    @keyframes nameIn {
+      0% {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* @keyframes flagSweep — translateX for flag inside text */
+    @keyframes flagSweep {
+      0% {
+        transform: translateX(-110%);
+      }
+      100% {
+        transform: translateX(110%);
+      }
+    }
+
+    /* @keyframes tagFromLeft — translateX from left + opacity */
+    @keyframes tagFromLeft {
+      0% {
+        opacity: 0;
+        transform: translateX(-70px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    /* @keyframes tagFromRight — translateX from right + opacity */
+    @keyframes tagFromRight {
+      0% {
+        opacity: 0;
+        transform: translateX(70px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    /* @keyframes fadeUp — opacity only for tagline and loading indication */
+    @keyframes fadeUp {
+      0% {
+        opacity: 0;
+      }
+      100% {
+        opacity: 1;
+      }
+    }
+
+    /* @keyframes pulseDot for loading dots animation */
+    @keyframes pulseDot {
+      0%, 100% {
+        transform: scale(0.6);
+        opacity: 0.4;
+      }
+      50% {
+        transform: scale(1.2);
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Replay Action trigger -->
+  <button id="replayBtn" class="replay-btn">
+    <span>↺</span> Replay
+  </button>
+
+  <!-- Interactive sequence workspace -->
+  <div class="splash-container">
+    
+    <!-- Brand row layout centers items horizontally side-by-side -->
+    <div class="brand-row">
+      
+      <!-- STEP 1 — LOGO ICON (64x64px, #F5C518 square, 16px radius) -->
+      <div class="logo-box">
+        <svg viewBox="0 0 64 64" width="38" height="38">
+          <!-- Two speed streaks on the left of width 3-4 stroke -->
+          <line x1="8" y1="26" x2="18" y2="26" stroke="#1A1A1A" stroke-width="3.5" stroke-linecap="round" />
+          <line x1="6" y1="34" x2="15" y2="34" stroke="#1A1A1A" stroke-width="3.5" stroke-linecap="round" />
+          
+          <!-- Circular arrow forming the Z -->
+          <path d="M 46 20 A 14 14 0 1 1 42 44 L 25 44 L 41 24 L 25 24" fill="none" stroke="#1A1A1A" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+          
+          <!-- Right-pointing chevron/arrow inside -->
+          <path d="M 32 29 L 37 34 L 32 39" fill="none" stroke="#1A1A1A" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+
+      <!-- STEP 2 — "Zippi" WORDMARK with SVG clipPath flag decoration -->
+      <div class="wordmark-container">
+        <svg class="wordmark-svg" viewBox="0 0 210 80" width="210" height="80">
+          <defs>
+            <!-- Clipped precisely to the letters of the custom typography -->
+            <clipPath id="textClip">
+              <text x="5" y="62" font-family="'Plus Jakarta Sans', sans-serif" font-weight="800" font-size="72" letter-spacing="-2px">Zippi</text>
+            </clipPath>
+          </defs>
+          
+          <!-- Render clipped visual workspace group -->
+          <g clip-path="url(#textClip)">
+            
+            <!-- Default background color fill of textual letters (#1A1A1A) -->
+            <rect x="0" y="0" width="100%" height="100%" fill="#1A1A1A" />
+            
+            <!-- STEP 3 — Sri Lanka flag overlay that translates left-to-right -->
+            <g class="flag-sweep-group">
+              
+              <!-- Precise Sri Lankan Flag SVG representation -->
+              <svg x="0" y="0" width="240" height="80" viewBox="0 0 240 80">
+                <!-- Maroon Base Background -->
+                <rect x="0" y="0" width="240" height="80" fill="#8D153A" />
+                
+                <!-- Gold/yellow internal border frame -->
+                <rect x="4" y="4" width="232" height="72" fill="none" stroke="#F5A800" stroke-width="4" />
+                
+                <!-- Yellow vertical dividing separator column line -->
+                <line x1="75" y1="4" x2="75" y2="76" stroke="#F5A800" stroke-width="4" />
+                
+                <!-- Green stripe panel at left -->
+                <rect x="14" y="8" width="26" height="64" fill="#1B7A3E" />
+                
+                <!-- Orange stripe panel next to green -->
+                <rect x="44" y="8" width="26" height="64" fill="#E07B39" />
+                
+                <!-- Main Maroon portion background (starts after separating line) -->
+                <rect x="77" y="6" width="157" height="68" fill="#8D153A" />
+                
+                <!-- Center: Golden Lion symbol built with ellipses and path sword details -->
+                <circle cx="155" cy="40" r="10" fill="#F5A800" />
+                <ellipse cx="145" cy="45" rx="15" ry="9" fill="#F5A800" />
+                <path d="M 152 28 L 157 28 M 155 25 L 155 35 M 130 45 Q 125 35 132 25" fill="none" stroke="#F5A800" stroke-width="2.5" stroke-linecap="round" />
+                
+                <!-- 4 corners: small green bo-leaf ellipses -->
+                <ellipse cx="87" cy="18" rx="4" ry="6" fill="#1B7A3E" />
+                <ellipse cx="223" cy="18" rx="4" ry="6" fill="#1B7A3E" />
+                <ellipse cx="87" cy="62" rx="4" ry="6" fill="#1B7A3E" />
+                <ellipse cx="223" cy="62" rx="4" ry="6" fill="#1B7A3E" />
+              </svg>
+              
+            </g>
+          </g>
+        </svg>
+      </div>
+
+    </div>
+
+    <!-- Slogans and tagline vertical grid layout -->
+    <div class="slogans-container">
+      <!-- STEP 4 — FIRST SLOGAN (our pride) -->
+      <div class="slogan slogan-left">Our Pride Our AKP</div>
+      
+      <!-- STEP 5 — SECOND SLOGAN (naange irukkom) -->
+      <div class="slogan slogan-right">Naange Irukkom Ongelukku</div>
+    </div>
+
+    <!-- STEP 6 — BOTTOM TAGLINE -->
+    <div class="tagline">Experience the real fast in Zippi</div>
+
+  </div>
+
+  <!-- Subtle loading dots at the bottom visible in final 0.5s -->
+  <div id="loader" class="loader-container">
+    <div class="dot"></div>
+    <div class="dot" style="animation-delay: 0.15s;"></div>
+    <div class="dot" style="animation-delay: 0.30s;"></div>
+  </div>
+
+  <!-- Interactive script workspace -->
+  <script>
+    // Define exact mapping animations to reset cleanly later
+    const animatedItems = [
+      { 
+        selector: '.logo-box', 
+        anim: 'logoIn 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) forwards 0.3s',
+        resetStyles: { transform: 'scale(0.6)', opacity: '0' }
+      },
+      { 
+        selector: '.wordmark-container', 
+        anim: 'nameIn 0.8s ease-out forwards 0.9s',
+        resetStyles: { transform: 'translateY(20px)', opacity: '0' }
+      },
+      { 
+        selector: '.flag-sweep-group', 
+        anim: 'flagSweep 1.8s ease-in-out infinite 1.0s',
+        resetStyles: { transform: 'translateX(-110%)' }
+      },
+      { 
+        selector: '.slogan-left', 
+        anim: 'tagFromLeft 0.7s cubic-bezier(0.34, 1.4, 0.64, 1) forwards 1.7s',
+        resetStyles: { transform: 'translateX(-70px)', opacity: '0' }
+      },
+      { 
+        selector: '.slogan-right', 
+        anim: 'tagFromRight 0.7s cubic-bezier(0.34, 1.4, 0.64, 1) forwards 1.9s',
+        resetStyles: { transform: 'translateX(70px)', opacity: '0' }
+      },
+      { 
+        selector: '.tagline', 
+        anim: 'fadeUp 0.7s ease forwards 2.2s',
+        resetStyles: { opacity: '0' }
+      },
+      { 
+        selector: '#loader', 
+        anim: 'fadeUp 0.5s ease forwards 3.0s',
+        resetStyles: { opacity: '0' }
+      }
+    ];
+
+    let redirectTimer = null;
+    let toastTimeout = null;
+
+    // Trigger precise redirect logging and interactive overlay banner
+    function initRedirectSequence() {
+      // Clear legacy timeouts
+      if (redirectTimer) clearTimeout(redirectTimer);
+      
+      redirectTimer = setTimeout(() => {
+        // Required console.log
+        console.log("Navigate to Home screen");
+        
+        // Show interactive user banner
+        showMockToastAlert();
+      }, 3500);
+    }
+
+    // Show beautiful premium visual notification about navigation
+    function showMockToastAlert() {
+      // Clean existing alerts
+      const existingToast = document.querySelector('.toast-alert');
+      if (existingToast) existingToast.remove();
+
+      const toast = document.createElement('div');
+      toast.className = 'toast-alert';
+      toast.innerHTML = '<span>🚀</span> Redirect simulated: <b>Navigate to Home screen</b>';
+      document.body.appendChild(toast);
+      
+      // Delay classes slightly to prompt transition-in animation
+      setTimeout(() => {
+        toast.classList.add('show');
+      }, 50);
+
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 400);
+      }, 3000);
+    }
+
+    // Fully reset and keyframe retrigger handler
+    function replayAnimations() {
+      // 1. Terminate alerts
+      const existingToast = document.querySelector('.toast-alert');
+      if (existingToast) existingToast.remove();
+      if (toastTimeout) clearTimeout(toastTimeout);
+
+      // 2. Clear out animation classes and default states
+      animatedItems.forEach(item => {
+        const el = document.querySelector(item.selector);
+        if (el) {
+          el.style.animation = 'none';
+          // Force apply base values
+          Object.keys(item.resetStyles).forEach(prop => {
+            el.style[prop] = item.resetStyles[prop];
+          });
+        }
+      });
+
+      // 3. Force reflow of layout pixels to retrigger CSS transition state
+      void document.body.offsetWidth;
+
+      // 4. Re-establish animations with exact timing offsets
+      animatedItems.forEach(item => {
+        const el = document.querySelector(item.selector);
+        if (el) {
+          // Empty styling override
+          el.style.animation = '';
+          // Force apply target anim parameter
+          el.style.animation = item.anim;
+        }
+      });
+
+      // 5. Retrigger automatic navigation simulation
+      initRedirectSequence();
+    }
+
+    // Setup events
+    document.getElementById('replayBtn').addEventListener('click', replayAnimations);
+
+    // Initial play trigger
+    window.addEventListener('DOMContentLoaded', () => {
+      initRedirectSequence();
+    });
+  </script>
+</body>
+</html>

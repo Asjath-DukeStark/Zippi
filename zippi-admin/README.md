@@ -1,20 +1,17 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# Zippi Admin Panel
 
-# Run and deploy your AI Studio app
+Full-featured dashboard for managing the Zippi platform: analytics, orders, products, categories, banners, users, riders and store settings — with image uploads to Supabase Storage.
 
-This contains everything you need to run your app locally.
+**Stack:** React 18 · TypeScript · Vite · Tailwind CSS v4 · React Router · lucide-react
 
-View your app in AI Studio: https://ai.studio/apps/fef4f1c5-4387-4f1c-8c59-f09a3078bb0d
+## Setup
 
-## Run Locally
+1. `npm install`
+2. (Optional) copy `.env.example` → `.env` to point at a remote API. In development the Vite proxy forwards `/api` to `http://localhost:3001`.
+3. `npm run dev` → http://localhost:3002
 
-**Prerequisites:**  Node.js
+Sign in with an **admin** account (default seed: `0500000001` / `admin123`).
 
+## Build
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+`npm run build` → static files in `dist/` (deploy to Vercel, Netlify, or any static host; set `VITE_API_BASE_URL` to your production API).

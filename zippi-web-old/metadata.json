@@ -1,0 +1,6 @@
+{
+  "name": "Zippi",
+  "description": "Fresh groceries, fast delivery in Colombo, Sri Lanka. Inspired by the Noon app design.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

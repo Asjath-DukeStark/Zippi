@@ -1,9 +1,9 @@
--- Zippi Grocery Delivery Database Schema
-
--- Enable UUID extension if not already enabled
+-- =====================================================================
+-- Zippi Platform — FULL schema (fresh install reference).
+-- For your EXISTING Supabase project use migration.sql instead.
+-- =====================================================================
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- 1. Users Table (Customer, Rider, Admin)
 CREATE TABLE IF NOT EXISTS public.users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   phone TEXT UNIQUE NOT NULL,
@@ -11,21 +11,23 @@ CREATE TABLE IF NOT EXISTS public.users (
   email TEXT UNIQUE,
   role TEXT NOT NULL DEFAULT 'customer' CHECK (role IN ('customer', 'rider', 'admin')),
   password_hash TEXT,
+  is_active BOOLEAN DEFAULT TRUE,
+  avatar_url TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 2. Categories Table
 CREATE TABLE IF NOT EXISTS public.categories (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   slug TEXT UNIQUE NOT NULL,
-  icon TEXT, -- Lucide icon name, e.g., 'Sparkles', 'Leaf'
+  icon TEXT,
+  image_url TEXT,
   parent_slug TEXT REFERENCES public.categories(slug) ON UPDATE CASCADE,
+  sort_order INTEGER DEFAULT 0,
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. Products Table
 CREATE TABLE IF NOT EXISTS public.products (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
   name TEXT NOT NULL,
@@ -34,18 +36,18 @@ CREATE TABLE IF NOT EXISTS public.products (
   price NUMERIC NOT NULL,
   original_price NUMERIC,
   discount_percent NUMERIC,
-  unit TEXT NOT NULL, -- e.g., "1 kg", "500g"
+  unit TEXT NOT NULL,
   image_url TEXT,
   popular BOOLEAN DEFAULT FALSE,
   is_flash_deal BOOLEAN DEFAULT FALSE,
   stock INTEGER DEFAULT 0,
+  variants JSONB DEFAULT '[]'::jsonb,
   rating NUMERIC DEFAULT 5.0,
   reviews_count INTEGER DEFAULT 0,
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 4. Orders Table
 CREATE TABLE IF NOT EXISTS public.orders (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   order_number TEXT UNIQUE NOT NULL,
@@ -54,25 +56,25 @@ CREATE TABLE IF NOT EXISTS public.orders (
   delivery_fee NUMERIC NOT NULL,
   discount NUMERIC DEFAULT 0,
   total NUMERIC NOT NULL,
-  delivery_address JSONB NOT NULL, -- Full details, label, etc.
+  delivery_address JSONB NOT NULL,
   payment_method TEXT NOT NULL CHECK (payment_method IN ('COD', 'CARD')),
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'preparing', 'dispatched', 'arriving', 'delivered', 'cancelled')),
   delivery_eta_min INTEGER DEFAULT 30,
   special_instructions TEXT,
   rider_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
+  delivered_at TIMESTAMPTZ,
+  promo_code TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 5. Order Items Table
 CREATE TABLE IF NOT EXISTS public.order_items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   order_id UUID REFERENCES public.orders(id) ON DELETE CASCADE,
   product_id TEXT REFERENCES public.products(id) ON DELETE SET NULL,
   quantity INTEGER NOT NULL CHECK (quantity > 0),
-  price NUMERIC NOT NULL -- Price at purchase
+  price NUMERIC NOT NULL
 );
 
--- 6. Banners Table
 CREATE TABLE IF NOT EXISTS public.banners (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
@@ -83,17 +85,52 @@ CREATE TABLE IF NOT EXISTS public.banners (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 7. Rider Profiles Table (Coordinates & online status)
 CREATE TABLE IF NOT EXISTS public.rider_profiles (
   user_id UUID PRIMARY KEY REFERENCES public.users(id) ON DELETE CASCADE,
   latitude NUMERIC,
   longitude NUMERIC,
   is_online BOOLEAN DEFAULT FALSE,
+  vehicle_type TEXT DEFAULT 'bike',
+  rating NUMERIC DEFAULT 4.0,
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Indexes for performance
+CREATE TABLE IF NOT EXISTS public.promotions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  code TEXT UNIQUE NOT NULL,
+  description TEXT,
+  type TEXT NOT NULL DEFAULT 'percent' CHECK (type IN ('percent', 'fixed')),
+  value NUMERIC NOT NULL,
+  min_order NUMERIC DEFAULT 0,
+  max_discount NUMERIC,
+  starts_at TIMESTAMPTZ,
+  expires_at TIMESTAMPTZ,
+  usage_limit INTEGER,
+  used_count INTEGER DEFAULT 0,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.settings (
+  key TEXT PRIMARY KEY,
+  value JSONB NOT NULL DEFAULT '{}'::jsonb,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.order_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id UUID REFERENCES public.orders(id) ON DELETE CASCADE,
+  status TEXT NOT NULL,
+  actor_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
+  note TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 CREATE INDEX IF NOT EXISTS idx_products_category_slug ON public.products(category_slug);
 CREATE INDEX IF NOT EXISTS idx_orders_user_id ON public.orders(user_id);
 CREATE INDEX IF NOT EXISTS idx_orders_rider_id ON public.orders(rider_id);
+CREATE INDEX IF NOT EXISTS idx_orders_status ON public.orders(status);
+CREATE INDEX IF NOT EXISTS idx_orders_created_at ON public.orders(created_at);
 CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON public.order_items(order_id);
+CREATE INDEX IF NOT EXISTS idx_order_events_order_id ON public.order_events(order_id);
+CREATE INDEX IF NOT EXISTS idx_users_role ON public.users(role);

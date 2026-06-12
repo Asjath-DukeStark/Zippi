@@ -3,6 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+export interface ProductVariant {
+  unit: string;
+  price: number;
+  originalPrice?: number;
+  stock?: number;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -17,12 +24,13 @@ export interface Product {
   stock: number;
   rating: number;
   reviewsCount: number;
-  isFlashDeal?: boolean;
+  variants?: ProductVariant[];
 }
 
 export interface CartItem {
   product: Product;
   quantity: number;
+  selectedUnit?: string;
 }
 
 export interface Address {
@@ -52,7 +60,10 @@ export interface Order {
 export interface Category {
   id: string;
   name: string;
-  icon: string; // Lucide icon name
-  parentSlug?: string;
-  parent_slug?: string;
+  slug?: string;
+  icon?: string | null;
+  imageUrl?: string | null;
+  parentSlug?: string | null;
+  sortOrder?: number;
+  isActive?: boolean;
 }

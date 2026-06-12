@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zippi - Fresh Groceries, Fast Delivery</title>
+    <meta name="description" content="Fresh groceries, fast delivery in Colombo, Sri Lanka. Experience real speed." />
+    <meta name="theme-color" content="#FCA311" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/icon-192.jpg" />
+    <link rel="icon" type="image/jpeg" href="/icon-192.jpg" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((reg) => console.log('Service worker registered successfully:', reg.scope))
+            .catch((err) => console.error('Service worker registration failed:', err));
+        });
+      }
+    </script>
+  </body>
+</html>
+

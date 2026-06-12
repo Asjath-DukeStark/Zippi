@@ -18,16 +18,17 @@ import {
   ArrowRight,
   Plus
 } from 'lucide-react';
-import { Product, Address } from '../types';
+import { Product, Address, CartItem } from '../types';
 import { PRODUCTS } from '../data';
 import ZippiProductImage from './ZippiProductImage';
+import { triggerHapticFeedback } from '../utils';
 
 interface ProductDetailsModalProps {
   product: Product | null;
   onClose: () => void;
-  cartQty: number;
-  onAddToCart: () => void;
-  onRemoveOne: () => void;
+  cart: CartItem[];
+  onAddToCart: (selectedUnit?: string) => void;
+  onRemoveOne: (selectedUnit?: string) => void;
   // Dynamic features
   addresses?: Address[];
   selectedAddress?: Address;
@@ -40,7 +41,7 @@ interface ProductDetailsModalProps {
 export default function ProductDetailsModal({
   product,
   onClose,
-  cartQty,
+  cart,
   onAddToCart,
   onRemoveOne,
   addresses = [],
@@ -48,27 +49,37 @@ export default function ProductDetailsModal({
   onSelectAddress,
   onOpenCart,
   onSelectProduct,
-  products,
+  products = PRODUCTS,
 }: ProductDetailsModalProps) {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [showLocationWarning, setShowLocationWarning] = useState(true);
   const [showAddressDropdown, setShowAddressDropdown] = useState(false);
-  const [activeSize, setActiveSize] = useState(product?.unit || '');
+  const [activeSize, setActiveSize] = useState(product?.variants && product.variants.length > 0 ? product.variants[0].unit : (product?.unit || ''));
   const [showSizeDropdown, setShowSizeDropdown] = useState(false);
 
   // Auto Reset state on product change
   useEffect(() => {
     if (product) {
-      setActiveSize(product.unit);
+      if (product.variants && product.variants.length > 0) {
+        setActiveSize(product.variants[0].unit);
+      } else {
+        setActiveSize(product.unit);
+      }
     }
     setShowSizeDropdown(false);
   }, [product]);
 
-  const hasDiscount = product ? (product.discountPercent && product.originalPrice) : false;
-
-  // Derive potential sizes based on product unit
+  // Derive potential sizes based on product unit/variants
   const sizeOptions = useMemo(() => {
     if (!product) return [];
+    if (product.variants && product.variants.length > 0) {
+      return product.variants.map(v => ({
+        label: v.unit,
+        price: v.price,
+        originalPrice: v.originalPrice ?? undefined,
+        stock: v.stock ?? undefined
+      }));
+    }
     const defaultUnit = product.unit;
     // Generate some mock alternatives
     if (defaultUnit.includes('g') && !defaultUnit.includes('kg')) {
@@ -96,19 +107,34 @@ export default function ProductDetailsModal({
     ];
   }, [product]);
 
+  const cartQty = useMemo(() => {
+    if (!product) return 0;
+    const match = cart.find(i => i.product.id === product.id && (i.selectedUnit || i.product.unit) === activeSize);
+    return match ? match.quantity : 0;
+  }, [cart, product, activeSize]);
+
   if (!product) return null;
 
-  // Adjust display prices if size changes
+  // Find current size details
   const currentSizeOption = sizeOptions.find(o => o.label === activeSize) || { label: product.unit, multiplier: 1.0 };
-  const displayPrice = Math.round(product.price * currentSizeOption.multiplier);
-  const displayOriginalPrice = product.originalPrice 
-    ? Math.round(product.originalPrice * currentSizeOption.multiplier) 
-    : undefined;
+  
+  const displayPrice = 'price' in currentSizeOption 
+    ? currentSizeOption.price 
+    : Math.round(product.price * (currentSizeOption as { multiplier: number }).multiplier);
+
+  const displayOriginalPrice = 'originalPrice' in currentSizeOption 
+    ? currentSizeOption.originalPrice 
+    : (product.originalPrice && 'multiplier' in currentSizeOption
+      ? Math.round(product.originalPrice * (currentSizeOption as { multiplier: number }).multiplier)
+      : undefined);
+
+  const displayDiscountPercent = displayOriginalPrice && displayOriginalPrice > displayPrice
+    ? Math.round((1 - displayPrice / displayOriginalPrice) * 100)
+    : 0;
 
   // Filter similar items from same category
   const similarProducts = useMemo(() => {
-    const allProducts = products || PRODUCTS;
-    return allProducts
+    return products
       .filter(p => p.category === product.category && p.id !== product.id)
       .slice(0, 8);
   }, [product, products]);
@@ -136,7 +162,10 @@ export default function ProductDetailsModal({
         <div className="px-4 py-3 bg-white border-b border-gray-150 flex items-center justify-between sticky top-0 z-30" id="detail-header-nav">
           <div className="flex items-center gap-2">
             <button 
-              onClick={onClose}
+              onClick={() => {
+                onClose();
+                triggerHapticFeedback('light');
+              }}
               className="p-1 hover:bg-gray-100 rounded-full transition-colors cursor-pointer text-[#1A1A1A]"
               id="detail-back-btn"
             >
@@ -191,7 +220,11 @@ export default function ProductDetailsModal({
           <div className="flex items-center gap-1">
             {/* Heart toggler button */}
             <button
-              onClick={() => setIsWishlisted(prev => !prev)}
+              onClick={() => {
+                const nextState = !isWishlisted;
+                setIsWishlisted(nextState);
+                triggerHapticFeedback(nextState ? 'double' : 'light');
+              }}
               className="p-1.5 hover:bg-gray-100 rounded-full cursor-pointer transition-all active:scale-90 text-gray-400 hover:text-red-500"
               id="detail-wishlist-toggle"
             >
@@ -213,7 +246,10 @@ export default function ProductDetailsModal({
                 ⚠️ You seem far away from this delivery location.
               </span>
               <button 
-                onClick={() => setShowLocationWarning(false)}
+                onClick={() => {
+                  setShowLocationWarning(false);
+                  triggerHapticFeedback('light');
+                }}
                 className="p-1 hover:bg-[#FFF9C4] rounded-full text-gray-500 cursor-pointer"
                 title="Dismiss location modal"
               >
@@ -238,9 +274,9 @@ export default function ProductDetailsModal({
 
           {/* ── PRODUCT IMAGE: Square, white bg ── */}
           <div className="px-4 py-3 bg-white flex justify-center items-center relative" id="image-frame-showcase">
-            {hasDiscount && (
+            {displayDiscountPercent > 0 && (
               <span className="absolute top-2 left-6 bg-[#E11D48] text-white text-[11px] font-black px-2.5 py-1 rounded-full z-10 shadow-xs uppercase">
-                Save {product.discountPercent}%
+                Save {displayDiscountPercent}%
               </span>
             )}
             
@@ -284,10 +320,11 @@ export default function ProductDetailsModal({
                   {sizeOptions.map(opt => (
                     <button
                       key={opt.label}
-                      onClick={() => {
-                        setActiveSize(opt.label);
-                        setShowSizeDropdown(false);
-                      }}
+                    onClick={() => {
+                      setActiveSize(opt.label);
+                      setShowSizeDropdown(false);
+                      triggerHapticFeedback('light');
+                    }}
                       className={`w-full text-left text-xs px-2.5 py-2 hover:bg-gray-50 rounded-lg flex items-center justify-between font-bold cursor-pointer ${activeSize === opt.label ? 'text-brand-blue' : ''}`}
                     >
                       <span>{opt.label}</span>
@@ -303,7 +340,7 @@ export default function ProductDetailsModal({
               <span className="text-[24px] font-black text-[#1A1A1A] tracking-tight">
                 LKR {displayPrice.toLocaleString()}
               </span>
-              {hasDiscount && displayOriginalPrice && (
+              {displayDiscountPercent > 0 && displayOriginalPrice && (
                 <span className="text-[14px] text-gray-400 line-through font-medium">
                   LKR {displayOriginalPrice.toLocaleString()}
                 </span>
@@ -381,6 +418,7 @@ export default function ProductDetailsModal({
                     onClick={() => {
                       if (onSelectProduct) {
                         onSelectProduct(p);
+                        triggerHapticFeedback('light');
                       }
                     }}
                     className="w-[120px] bg-white border border-gray-200 rounded-xl p-2 shrink-0 hover:border-[#F5C518] transition-all cursor-pointer flex flex-col justify-between"
@@ -429,7 +467,7 @@ export default function ProductDetailsModal({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      onRemoveOne();
+                      onRemoveOne(activeSize);
                     }}
                     className="w-11 h-full flex items-center justify-center text-[#1A1A1A] hover:bg-[#F5C518]/15 text-red-500 cursor-pointer"
                   >
@@ -443,7 +481,7 @@ export default function ProductDetailsModal({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      onAddToCart();
+                      onAddToCart(activeSize);
                     }}
                     className="w-11 h-full flex items-center justify-center text-[#1A1A1A] hover:bg-[#F5C518]/15 cursor-pointer font-black text-lg"
                   >
@@ -458,7 +496,7 @@ export default function ProductDetailsModal({
               {cartQty === 0 ? (
                 /* Full-width: 'Add to Cart' yellow button */
                 <button
-                  onClick={onAddToCart}
+                  onClick={() => onAddToCart(activeSize)}
                   className="w-full bg-[#F5C518] hover:bg-[#E0B407] active:scale-95 text-[#1A1A1A] font-black text-xs py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer uppercase tracking-wider h-[44px]"
                   id="detail-action-add-btn"
                 >

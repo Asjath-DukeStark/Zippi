@@ -1,101 +1,92 @@
-const db = require('../utils/dbHelper');
+const supabase = require('../config/supabase');
+const { ok, ApiError } = require('../utils/response');
 
-const getProducts = async (req, res, next) => {
-  try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const offset = (page - 1) * limit;
-    
-    const { search, category, sort } = req.query;
-
-    const { products, total } = await db.products.findAll({
-      search,
-      category,
-      sort,
-      limit,
-      offset
-    });
-
-    return res.status(200).json({
-      success: true,
-      data: {
-        products,
-        pagination: {
-          total,
-          page,
-          limit,
-          pages: Math.ceil(total / limit)
-        }
-      },
-      message: 'Products fetched'
-    });
-  } catch (error) {
-    next(error);
-  }
+const mapBody = (b) => {
+  const m = {};
+  const map = {
+    name: 'name', description: 'description', categorySlug: 'category_slug', price: 'price',
+    originalPrice: 'original_price', discountPercent: 'discount_percent', unit: 'unit',
+    imageUrl: 'image_url', popular: 'popular', isFlashDeal: 'is_flash_deal', stock: 'stock',
+    rating: 'rating', reviewsCount: 'reviews_count', isActive: 'is_active', variants: 'variants'
+  };
+  for (const [k, col] of Object.entries(map)) if (b[k] !== undefined) m[col] = b[k];
+  return m;
 };
 
-const getFeaturedProducts = async (req, res, next) => {
+/**
+ * GET /api/products — public list (web/mobile).
+ * Query: category, search, popular, flash, includeInactive (admin), page, limit, sort
+ * Response shape kept compatible with the live Zippi web app: { success, data: { products, pagination } }
+ */
+exports.list = async (req, res, next) => {
   try {
-    // Return all popular products
-    const { products } = await db.products.findAll({
-      popular: true,
-      limit: 20
-    });
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.min(200, Number(req.query.limit) || 100);
+    const from = (page - 1) * limit;
 
-    return res.status(200).json({
-      success: true,
-      data: products,
-      message: 'Featured products fetched'
+    let q = supabase.from('products').select('*', { count: 'exact' });
+
+    const isAdmin = req.user?.role === 'admin';
+    if (!(isAdmin && req.query.includeInactive === 'true')) q = q.eq('is_active', true);
+    if (req.query.category) q = q.eq('category_slug', req.query.category);
+    if (req.query.popular === 'true') q = q.eq('popular', true);
+    if (req.query.flash === 'true') q = q.eq('is_flash_deal', true);
+    if (req.query.search) q = q.ilike('name', `%${req.query.search}%`);
+
+    const sort = req.query.sort || 'created_at';
+    const asc = req.query.order === 'asc';
+    q = q.order(sort, { ascending: asc }).range(from, from + limit - 1);
+
+    const { data: products, count, error } = await q;
+    if (error) throw new ApiError(error.message, 500, 'DB_ERROR');
+
+    return ok(res, {
+      products,
+      pagination: { page, limit, total: count, totalPages: Math.ceil((count || 0) / limit) }
     });
-  } catch (error) {
-    next(error);
-  }
+  } catch (err) { next(err); }
 };
 
-const getFlashDeals = async (req, res, next) => {
+/** GET /api/products/:id */
+exports.get = async (req, res, next) => {
   try {
-    // Return all flash deals
-    const { products } = await db.products.findAll({
-      isFlashDeal: true,
-      limit: 20
-    });
-
-    return res.status(200).json({
-      success: true,
-      data: products,
-      message: 'Flash deals fetched'
-    });
-  } catch (error) {
-    next(error);
-  }
+    const { data: product, error } = await supabase.from('products').select('*').eq('id', req.params.id).maybeSingle();
+    if (error) throw new ApiError(error.message, 500, 'DB_ERROR');
+    if (!product) throw new ApiError('Product not found', 404, 'NOT_FOUND');
+    return ok(res, { product });
+  } catch (err) { next(err); }
 };
 
-const getProductById = async (req, res, next) => {
+/** POST /api/admin/products */
+exports.create = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const product = await db.products.findById(id);
-    
-    if (!product) {
-      return res.status(404).json({
-        success: false,
-        message: 'Product not found',
-        error: 'NOT_FOUND'
-      });
+    const { data: product, error } = await supabase.from('products').insert(mapBody(req.body)).select('*').single();
+    if (error) throw new ApiError(error.message, 500, 'DB_ERROR');
+    return ok(res, { product }, 201);
+  } catch (err) { next(err); }
+};
+
+/** PATCH /api/admin/products/:id */
+exports.update = async (req, res, next) => {
+  try {
+    const { data: product, error } = await supabase
+      .from('products').update(mapBody(req.body)).eq('id', req.params.id).select('*').maybeSingle();
+    if (error) throw new ApiError(error.message, 500, 'DB_ERROR');
+    if (!product) throw new ApiError('Product not found', 404, 'NOT_FOUND');
+    return ok(res, { product });
+  } catch (err) { next(err); }
+};
+
+/** DELETE /api/admin/products/:id — soft delete (is_active=false); ?hard=true to remove */
+exports.remove = async (req, res, next) => {
+  try {
+    if (req.query.hard === 'true') {
+      const { error } = await supabase.from('products').delete().eq('id', req.params.id);
+      if (error) throw new ApiError(error.message, 500, 'DB_ERROR');
+    } else {
+      const { error } = await supabase.from('products').update({ is_active: false }).eq('id', req.params.id);
+      if (error) throw new ApiError(error.message, 500, 'DB_ERROR');
     }
-
-    return res.status(200).json({
-      success: true,
-      data: product,
-      message: 'Product details fetched'
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-module.exports = {
-  getProducts,
-  getFeaturedProducts,
-  getFlashDeals,
-  getProductById
+    return ok(res, { deleted: true });
+  } catch (err) { next(err); }
 };

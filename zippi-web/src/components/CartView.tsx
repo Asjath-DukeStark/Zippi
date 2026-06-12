@@ -21,10 +21,10 @@ import ZippiProductImage from './ZippiProductImage';
 
 interface CartViewProps {
   cart: CartItem[];
-  onAddToCart: (product: Product) => void;
-  onRemoveOne: (product: Product) => void;
-  onUpdateQty: (productId: string, delta: number) => void;
-  onRemoveItem: (productId: string) => void;
+  onAddToCart: (product: Product, selectedUnit?: string) => void;
+  onRemoveOne: (product: Product, selectedUnit?: string) => void;
+  onUpdateQty: (productId: string, selectedUnit: string | undefined, delta: number) => void;
+  onRemoveItem: (productId: string, selectedUnit?: string) => void;
   onProceedToCheckout: () => void;
   addresses?: Address[];
   selectedAddress?: Address;
@@ -32,6 +32,7 @@ interface CartViewProps {
   onBack: () => void;
   wishlist: string[];
   onToggleWishlist: (productId: string) => void;
+  onUpdateUnit?: (productId: string, oldUnit: string | undefined, newUnit: string) => void;
 }
 
 export default function CartView({
@@ -47,6 +48,7 @@ export default function CartView({
   onBack,
   wishlist,
   onToggleWishlist,
+  onUpdateUnit,
 }: CartViewProps) {
   const [showLocationWarning, setShowLocationWarning] = useState(true);
   const [showAddressDropdown, setShowAddressDropdown] = useState(false);
@@ -54,7 +56,10 @@ export default function CartView({
   // Compute total price of cart items
   const cartTotalPriceRaw = useMemo(() => {
     return cart.reduce((acc, item) => {
-      return acc + (item.product.price * item.quantity);
+      const price = (item.selectedUnit && item.product.variants && item.product.variants.length > 0)
+        ? (item.product.variants.find(v => v.unit === item.selectedUnit)?.price ?? item.product.price)
+        : item.product.price;
+      return acc + (price * item.quantity);
     }, 0);
   }, [cart]);
 
@@ -194,13 +199,15 @@ export default function CartView({
             {cart.map((item, index) => {
               return (
                 <CartItemRow
-                  key={item.product.id}
+                  key={`${item.product.id}-${item.selectedUnit || item.product.unit}`}
                   item={item}
                   onUpdateQty={onUpdateQty}
                   onRemoveItem={onRemoveItem}
                   isWishlisted={wishlist.includes(item.product.id)}
                   onToggleWishlist={onToggleWishlist}
                   isLast={index === cart.length - 1}
+                  onAddToCart={onAddToCart}
+                  onUpdateUnit={onUpdateUnit}
                 />
               );
             })}
@@ -247,11 +254,13 @@ export default function CartView({
    ──────────────────────────────────────────────────────── */
 interface CartItemRowProps {
   item: CartItem;
-  onUpdateQty: (productId: string, delta: number) => void;
-  onRemoveItem: (productId: string) => void;
+  onUpdateQty: (productId: string, selectedUnit: string | undefined, delta: number) => void;
+  onRemoveItem: (productId: string, selectedUnit?: string) => void;
   isWishlisted: boolean;
   onToggleWishlist: (productId: string) => void;
   isLast: boolean;
+  onAddToCart?: (product: Product, selectedUnit?: string) => void;
+  onUpdateUnit?: (productId: string, oldUnit: string | undefined, newUnit: string) => void;
 }
 
 function CartItemRow({
@@ -260,19 +269,29 @@ function CartItemRow({
   onRemoveItem,
   isWishlisted,
   onToggleWishlist,
-  isLast
+  isLast,
+  onAddToCart,
+  onUpdateUnit
 }: CartItemRowProps) {
-  const { product, quantity } = item;
-  const [activeSize, setActiveSize] = useState(product.unit);
+  const { product, quantity, selectedUnit } = item;
+  const [activeSize, setActiveSize] = useState(selectedUnit || product.unit);
   const [showSizeSelect, setShowSizeSelect] = useState(false);
 
-  // Sync state if product updates
+  // Sync state if item/selectedUnit updates
   useEffect(() => {
-    setActiveSize(product.unit);
-  }, [product]);
+    setActiveSize(selectedUnit || product.unit);
+  }, [selectedUnit, product.unit]);
 
   // Alternate sizes generator matching product detail modal sizing formula
   const sizeOptions = useMemo(() => {
+    if (product.variants && product.variants.length > 0) {
+      return product.variants.map(v => ({
+        label: v.unit,
+        price: v.price,
+        originalPrice: v.originalPrice ?? undefined,
+        stock: v.stock ?? undefined
+      }));
+    }
     const defaultUnit = product.unit;
     if (defaultUnit.includes('g') && !defaultUnit.includes('kg')) {
       const gValue = parseInt(defaultUnit) || 250;
@@ -300,13 +319,19 @@ function CartItemRow({
   }, [product]);
 
   const currentOption = sizeOptions.find(o => o.label === activeSize) || { label: product.unit, multiplier: 1.0 };
-  const calculatedRowPrice = Math.round(product.price * currentOption.multiplier);
+  const calculatedRowPrice = useMemo(() => {
+    if ('price' in currentOption) {
+      return currentOption.price;
+    } else {
+      return Math.round(product.price * currentOption.multiplier);
+    }
+  }, [product.price, currentOption]);
 
   return (
-    <div className="space-y-3" id={`cart-row-container-${product.id}`}>
+    <div className="space-y-3" id={`cart-row-container-${product.id}-${selectedUnit || product.unit}`}>
       
       {/* Row details card wrapper */}
-      <div className="bg-white rounded-xl border border-gray-150 p-3.5 relative flex gap-3.5 shadow-xs" id={`cart-row-${product.id}`}>
+      <div className="bg-white rounded-xl border border-gray-150 p-3.5 relative flex gap-3.5 shadow-xs" id={`cart-row-${product.id}-${selectedUnit || product.unit}`}>
         
         {/* Left Aspect ratio image container (80x80) */}
         <div className="w-[80px] h-[80px] shrink-0 bg-white border border-gray-100 rounded-xl flex items-center justify-center p-1.5 select-none relative">
@@ -340,7 +365,7 @@ function CartItemRow({
               <button
                 onClick={() => setShowSizeSelect(p => !p)}
                 className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-[10.5px] font-bold text-gray-600 rounded-full cursor-pointer transition-colors"
-                id={`cart-row-size-btn-${product.id}`}
+                id={`cart-row-size-btn-${product.id}-${selectedUnit || product.unit}`}
               >
                 <span>Size: {activeSize}</span>
                 <ChevronDown className="w-3 h-3 text-gray-500" />
@@ -354,6 +379,9 @@ function CartItemRow({
                       onClick={() => {
                         setActiveSize(opt.label);
                         setShowSizeSelect(false);
+                        if (onUpdateUnit) {
+                          onUpdateUnit(product.id, selectedUnit, opt.label);
+                        }
                       }}
                       className={`w-full text-left text-[10.5px] px-2 py-1.5 rounded-lg hover:bg-gray-50 flex items-center justify-between font-bold cursor-pointer ${activeSize === opt.label ? 'text-brand-blue bg-blue-50/20' : ''}`}
                     >
@@ -400,16 +428,16 @@ function CartItemRow({
           </div>
 
           {/* Stepper with quantity trigger bottom of item */}
-          <div className="flex items-center justify-between border-t border-gray-100 pt-3.5 mt-3" id={`actions-row-${product.id}`}>
+          <div className="flex items-center justify-between border-t border-gray-100 pt-3.5 mt-3" id={`actions-row-${product.id}-${selectedUnit || product.unit}`}>
             
             {/* Stepper: [🗑️] [1] [+] */}
             <div className="flex items-center justify-between border-2 border-[#F5C518] bg-[#FFFDEA] rounded-xl h-[34px] w-[110px] overflow-hidden select-none">
               <button
                 onClick={() => {
                   if (quantity <= 1) {
-                    onRemoveItem(product.id);
+                    onRemoveItem(product.id, selectedUnit);
                   } else {
-                    onUpdateQty(product.id, -1);
+                    onUpdateQty(product.id, selectedUnit, -1);
                   }
                 }}
                 className="w-10 h-full flex items-center justify-center text-[#1A1A1A] hover:bg-[#F5C518]/15 text-red-500 cursor-pointer"
@@ -423,7 +451,7 @@ function CartItemRow({
               </span>
 
               <button
-                onClick={() => onUpdateQty(product.id, 1)}
+                onClick={() => onUpdateQty(product.id, selectedUnit, 1)}
                 className="w-10 h-full flex items-center justify-center text-[#1A1A1A] hover:bg-[#F5C518]/15 cursor-pointer font-black text-sm"
               >
                 +

@@ -3,10 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ArrowLeft, Search, ShoppingBag, Share2, Plus, Minus, Trash2, X, ChevronDown, Check, Sparkles } from 'lucide-react';
 import { Product, CartItem } from '../types';
-import { PRODUCTS, CATEGORIES } from '../data';
+import { PRODUCTS } from '../data';
 import ProductCard from './ProductCard';
 import FilterBottomSheet from './FilterBottomSheet';
 
@@ -39,14 +39,32 @@ interface ProductListingViewProps {
   browsingCategory: string;
   onClose: () => void;
   cart: CartItem[];
-  onAddToCart: (product: Product) => void;
-  onRemoveOne: (product: Product) => void;
+  onAddToCart: (product: Product, selectedUnit?: string) => void;
+  onRemoveOne: (product: Product, selectedUnit?: string) => void;
   onViewDetails: (product: Product) => void;
   wishlist: string[];
   onToggleWishlist: (productId: string) => void;
   onOpenCart: () => void;
   products?: Product[];
 }
+
+const DETAILED_CATEGORIES_LOCAL = [
+  { id: 'veggies', name: 'Fresh Produce', image: 'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=300&auto=format&fit=crop&q=80' },
+  { id: 'dairy', name: 'Dairy & Eggs', image: 'https://images.unsplash.com/photo-1516448620398-c5f44bf9f441?w=300&auto=format&fit=crop&q=80' },
+  { id: 'meats', name: 'Meat & Seafood', image: 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=300&auto=format&fit=crop&q=80' },
+  { id: 'bakery', name: 'Bakery & Bread', image: 'https://images.unsplash.com/photo-1549931319-a545dcf3bc73?w=300&auto=format&fit=crop&q=80' },
+  { id: 'beverages', name: 'Beverages', image: 'https://images.unsplash.com/photo-1541167760496-1628856ab772?w=300&auto=format&fit=crop&q=80' },
+  { id: 'snacks', name: 'Snacks & Chips', image: 'https://images.unsplash.com/photo-1511125341079-05a909dd6802?w=300&auto=format&fit=crop&q=80' },
+  { id: 'frozen', name: 'Frozen Foods', image: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=300&auto=format&fit=crop&q=80' },
+  { id: 'cleaning', name: 'Cleaning & Home', image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=300&auto=format&fit=crop&q=80' },
+  { id: 'personal', name: 'Personal Care', image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=300&auto=format&fit=crop&q=80' },
+  { id: 'baby', name: 'Baby & Kids', image: 'https://images.unsplash.com/photo-1515488042361-404e9250afef?w=300&auto=format&fit=crop&q=80' },
+  { id: 'breakfast', name: 'Breakfast', image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=300&auto=format&fit=crop&q=80' },
+  { id: 'canned', name: 'Canned & Dry Goods', image: 'https://images.unsplash.com/photo-1536640712247-c57530c1737e?w=300&auto=format&fit=crop&q=80' },
+  { id: 'pantry', name: 'Oils & Condiments', image: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=300&auto=format&fit=crop&q=80' },
+  { id: 'sweets', name: 'Sweets & Chocolates', image: 'https://images.unsplash.com/photo-1511381939415-e44015466834?w=300&auto=format&fit=crop&q=80' },
+  { id: 'health', name: 'Health Foods', image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=300&auto=format&fit=crop&q=80' }
+];
 
 const LOCAL_BRANDS = ['All', 'Kotmale', 'Pelwatte', 'Araliya', 'Dilmah', 'Harischandra'];
 
@@ -60,7 +78,7 @@ export default function ProductListingView({
   wishlist,
   onToggleWishlist,
   onOpenCart,
-  products,
+  products = PRODUCTS,
 }: ProductListingViewProps) {
   // Filters State
   const [browseFastDelivery, setBrowseFastDelivery] = useState(true); // Default active (yellow)
@@ -78,7 +96,7 @@ export default function ProductListingView({
   const [isPriceDropdownOpen, setIsPriceDropdownOpen] = useState(false);
 
   // Sorting State
-  const [browseSortBy, setBrowseSortBy] = useState<'none' | 'price-asc' | 'price-desc' | 'rating'>('none');
+  const [browseSortBy, setBrowseSortBy] = useState<'none' | 'price-asc' | 'price-desc' | 'rating' | 'name-asc' | 'name-desc'>('none');
   const [isSortModalOpen, setIsSortModalOpen] = useState(false);
 
   // Search inside category
@@ -91,71 +109,54 @@ export default function ProductListingView({
   // Success Toast Banner
   const [toastText, setToastText] = useState<string | null>(null);
 
-  // Subcategory Selection State
-  const [selectedSubcategory, setSelectedSubcategory] = useState<string>('all');
-
-  // Check if browsingCategory is actually a subcategory and map back to parent if needed
-  const categoryRoutingInfo = useMemo(() => {
-    const matched = CATEGORIES.find(c => c.id === browsingCategory);
-    const parentId = matched?.parentSlug || matched?.parent_slug;
-    if (parentId) {
-      return {
-        parentId,
-        subcategoryId: browsingCategory,
-        isSubcategory: true
-      };
-    }
-    return {
-      parentId: browsingCategory,
-      subcategoryId: 'all',
-      isSubcategory: false
+  // Category identity meta
+  const currentCategory = useMemo(() => {
+    return DETAILED_CATEGORIES_LOCAL.find(c => c.id === browsingCategory) || {
+      id: browsingCategory,
+      name: 'Fresh Produce',
+      image: ''
     };
   }, [browsingCategory]);
 
-  // Update selectedSubcategory state when browsingCategory changes
-  useEffect(() => {
-    if (categoryRoutingInfo.isSubcategory) {
-      setSelectedSubcategory(categoryRoutingInfo.subcategoryId);
-    } else {
-      setSelectedSubcategory('all');
-    }
-  }, [categoryRoutingInfo]);
-
-  // Category identity meta
-  const currentCategory = useMemo(() => {
-    const parentId = categoryRoutingInfo.parentId;
-    return CATEGORIES.find(c => c.id === parentId) || {
-      id: parentId,
-      name: 'Category',
-      icon: 'Sparkles'
-    };
-  }, [categoryRoutingInfo.parentId]);
-
-  // Find subcategories belonging to this parent category
-  const subcategories = useMemo(() => {
-    const parentId = categoryRoutingInfo.parentId;
-    return CATEGORIES.filter(c => c.parentSlug === parentId || c.parent_slug === parentId);
-  }, [categoryRoutingInfo.parentId]);
-
   // Map category code to exact data products
   const categoryProductsRaw = useMemo(() => {
-    const allProducts = products || PRODUCTS;
-    const parentId = categoryRoutingInfo.parentId;
-    
-    // Filter by specific subcategory if selected
-    if (selectedSubcategory !== 'all') {
-      return allProducts.filter(p => p.category === selectedSubcategory);
+    let items = products;
+    if (browsingCategory === 'veggies') {
+      // Fresh Produce
+      items = products.filter(p => p.category === 'veggies' || p.category === 'fruits');
+    } else if (browsingCategory === 'dairy') {
+      items = products.filter(p => p.category === 'dairy');
+    } else if (browsingCategory === 'meats') {
+      items = products.filter(p => p.category === 'meats');
+    } else if (browsingCategory === 'bakery') {
+      items = products.filter(p => p.category === 'bakery');
+    } else if (browsingCategory === 'beverages') {
+      items = products.filter(p => p.category === 'beverages');
+    } else if (browsingCategory === 'snacks') {
+      items = products.filter(p => p.category === 'snacks');
+    } else if (browsingCategory === 'frozen') {
+      items = products.filter(p => p.category === 'frozen');
+    } else if (browsingCategory === 'cleaning') {
+      items = products.filter(p => p.category === 'cleaning');
+    } else if (browsingCategory === 'personal') {
+      items = products.filter(p => p.name.toLowerCase().includes('eco') || p.category === 'cleaning');
+    } else if (browsingCategory === 'baby') {
+      items = products.filter(p => p.name.toLowerCase().includes('organic') || p.category === 'dairy');
+    } else if (browsingCategory === 'breakfast') {
+      items = products.filter(p => p.category === 'bakery' || p.category === 'dairy' || p.id === 'be1');
+    } else if (browsingCategory === 'canned') {
+      items = products.filter(p => p.category === 'pantry');
+    } else if (browsingCategory === 'pantry') {
+      items = products.filter(p => p.category === 'pantry');
+    } else if (browsingCategory === 'sweets') {
+      items = products.filter(p => p.category === 'snacks');
+    } else if (browsingCategory === 'health') {
+      items = products.filter(p => p.name.toLowerCase().includes('organic') || p.category === 'veggies');
+    } else {
+      items = products.filter(p => p.category === browsingCategory);
     }
-
-    // Filter by main category (matches parentSlug)
-    if (subcategories.length > 0) {
-      const subSlugs = subcategories.map(s => s.id);
-      return allProducts.filter(p => subSlugs.includes(p.category) || p.category === parentId);
-    }
-
-    // Direct match (if it is a flat category / leaf subcategory)
-    return allProducts.filter(p => p.category === parentId);
-  }, [categoryRoutingInfo.parentId, selectedSubcategory, subcategories, products]);
+    return items;
+  }, [browsingCategory, products]);
 
   // Apply filters and sorting
   const filteredAndSortedProducts = useMemo(() => {
@@ -211,6 +212,10 @@ export default function ProductListingView({
       items.sort((a, b) => b.price - a.price);
     } else if (browseSortBy === 'rating') {
       items.sort((a, b) => b.rating - a.rating);
+    } else if (browseSortBy === 'name-asc') {
+      items.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (browseSortBy === 'name-desc') {
+      items.sort((a, b) => b.name.localeCompare(a.name));
     }
 
     return items;
@@ -432,41 +437,6 @@ export default function ProductListingView({
       {/* ── MAIN SCROLL FEED ── */}
       <div className="flex-grow overflow-y-auto bg-gray-50/50 p-4 pb-20 select-none" id="listing-scroll-feed">
         
-        {/* Subcategories Horizontal scroll bar */}
-        {subcategories.length > 0 && (
-          <div className="mb-4 -mx-4 px-4 pb-2 border-b border-gray-150 overflow-x-auto flex items-center gap-2 scrollbar-none" id="subcategories-horizontal-rail">
-            <button
-              onClick={() => {
-                setSelectedSubcategory('all');
-                setVisibleCount(20);
-              }}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all select-none border ${
-                selectedSubcategory === 'all'
-                  ? 'bg-[#F5C518] border-transparent text-[#1A1A1A] font-extrabold shadow-xs active:scale-95'
-                  : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50 active:scale-95'
-              }`}
-            >
-              All {currentCategory.name}
-            </button>
-            {subcategories.map((sub) => (
-              <button
-                key={sub.id}
-                onClick={() => {
-                  setSelectedSubcategory(sub.id);
-                  setVisibleCount(20);
-                }}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all select-none border ${
-                  selectedSubcategory === sub.id
-                    ? 'bg-[#F5C518] border-transparent text-[#1A1A1A] font-extrabold shadow-xs active:scale-95'
-                    : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50 active:scale-95'
-                }`}
-              >
-                {sub.name}
-              </button>
-            ))}
-          </div>
-        )}
-
         {/* Summary total count */}
         <div className="text-[11.5px] text-gray-400 font-bold uppercase tracking-wide mb-3 flex items-center justify-between">
           <span>{filteredAndSortedProducts.length} Premium Products Found</span>
@@ -503,7 +473,7 @@ export default function ProductListingView({
               <ProductCard
                 key={p.id}
                 product={p}
-                cartQty={cart.find(i => i.product.id === p.id)?.quantity || 0}
+                cartQty={cart.filter(i => i.product.id === p.id).reduce((sum, item) => sum + item.quantity, 0)}
                 onAddToCart={() => onAddToCart(p)}
                 onRemoveOne={() => onRemoveOne(p)}
                 onViewDetails={() => onViewDetails(p)}
@@ -587,6 +557,36 @@ export default function ProductListingView({
               >
                 <span>Relevance Match</span>
                 {browseSortBy === 'none' && <Check className="w-4 h-4 text-[#827717]" />}
+              </button>
+
+              <button
+                onClick={() => {
+                  setBrowseSortBy('name-asc');
+                  setIsSortModalOpen(false);
+                }}
+                className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${
+                  browseSortBy === 'name-asc' 
+                    ? 'border-[#F5C518] bg-[#FFFBEA] font-bold text-yellow-800' 
+                    : 'border-gray-150 bg-white hover:bg-gray-50 text-gray-700'
+                }`}
+              >
+                <span>Name: A to Z</span>
+                {browseSortBy === 'name-asc' && <Check className="w-4 h-4 text-[#827717]" />}
+              </button>
+
+              <button
+                onClick={() => {
+                  setBrowseSortBy('name-desc');
+                  setIsSortModalOpen(false);
+                }}
+                className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${
+                  browseSortBy === 'name-desc' 
+                    ? 'border-[#F5C518] bg-[#FFFBEA] font-bold text-yellow-800' 
+                    : 'border-gray-150 bg-white hover:bg-gray-50 text-gray-700'
+                }`}
+              >
+                <span>Name: Z to A</span>
+                {browseSortBy === 'name-desc' && <Check className="w-4 h-4 text-[#827717]" />}
               </button>
 
               <button

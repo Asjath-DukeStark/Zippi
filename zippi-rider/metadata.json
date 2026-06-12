@@ -1,6 +1,0 @@
-{
-  "name": "Zippi Rider",
-  "description": "Interactive mobile simulator for Zippi Rider - the ultimate delivery rider companion featuring GPS tracking, order routing, and instant payouts.",
-  "requestFramePermissions": ["geolocation"],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}

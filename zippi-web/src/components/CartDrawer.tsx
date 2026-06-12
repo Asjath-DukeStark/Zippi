@@ -18,13 +18,14 @@ import {
 } from 'lucide-react';
 import { CartItem } from '../types';
 import ZippiProductImage from './ZippiProductImage';
+import { triggerHapticFeedback } from '../utils';
 
 interface CartDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   cartItems: CartItem[];
-  onUpdateQty: (productId: string, delta: number) => void;
-  onRemoveItem: (productId: string) => void;
+  onUpdateQty: (productId: string, selectedUnit: string | undefined, delta: number) => void;
+  onRemoveItem: (productId: string, selectedUnit?: string) => void;
   onProceedToCheckout: (appliedPromo: string, discountAmt: number, finalFee: number) => void;
   deliveryFee: number;
 }
@@ -52,7 +53,15 @@ export default function CartDrawer({
   const [courierNote, setCourierNote] = useState('');
 
   // Computations
-  const subtotal = cartItems.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
+  const getItemPrice = (item: CartItem) => {
+    if (item.selectedUnit && item.product.variants && item.product.variants.length > 0) {
+      const v = item.product.variants.find(x => x.unit === item.selectedUnit);
+      if (v) return v.price;
+    }
+    return item.product.price;
+  };
+
+  const subtotal = cartItems.reduce((acc, item) => acc + (getItemPrice(item) * item.quantity), 0);
   
   // Calculate Promo Discount
   let promoDiscount = 0;
@@ -85,23 +94,27 @@ export default function CartDrawer({
   const handleApplyPromo = (code: string) => {
     const matched = AVAILABLE_PROMOS.find(p => p.code.toUpperCase() === code.trim().toUpperCase());
     if (!matched) {
+      triggerHapticFeedback('error');
       setPromoError('Invalid coupon! Try WELCOMEKITS or COLOMBOSUPER.');
       setActivePromo(null);
       return;
     }
 
     if (matched.code === 'WELCOMEKITS' && subtotal < (matched.minPrice || 0)) {
+      triggerHapticFeedback('error');
       setPromoError(`Minimum spend of LKR ${(matched.minPrice)?.toLocaleString()} required.`);
       setActivePromo(null);
       return;
     }
 
+    triggerHapticFeedback('success');
     setActivePromo(matched);
     setPromoError('');
     setCouponCode(matched.code);
   };
 
   const removePromo = () => {
+    triggerHapticFeedback('light');
     setActivePromo(null);
     setCouponCode('');
     setPromoError('');
@@ -110,7 +123,7 @@ export default function CartDrawer({
   return (
     <div className="fixed inset-0 bg-brand-charcoal/70 backdrop-blur-xs flex justify-end z-50">
       {/* Background Dim Backdrop */}
-      <div className="absolute inset-0" onClick={onClose}></div>
+      <div className="absolute inset-0" onClick={() => { onClose(); triggerHapticFeedback('light'); }}></div>
 
       {/* Main Drawer Shell */}
       <div 
@@ -126,7 +139,7 @@ export default function CartDrawer({
             </span>
           </div>
           <button 
-            onClick={onClose}
+            onClick={() => { onClose(); triggerHapticFeedback('light'); }}
             className="p-1.5 rounded-full hover:bg-gray-100 text-brand-charcoal transition-colors cursor-pointer"
             id="cart-close-btn"
           >
@@ -147,7 +160,7 @@ export default function CartDrawer({
               </p>
             </div>
             <button
-              onClick={onClose}
+              onClick={() => { onClose(); triggerHapticFeedback('light'); }}
               className="bg-brand-yellow hover:bg-brand-yellow-hover text-brand-charcoal font-extrabold text-xs py-3 px-6 rounded-xl select-none transition-colors duration-200 cursor-pointer shadow-sm"
             >
               START SHOPPING
@@ -170,72 +183,76 @@ export default function CartDrawer({
 
               {/* List of checkout items */}
               <div className="bg-white rounded-xl border border-brand-gray-light divide-y divide-brand-gray-light overflow-hidden">
-                {cartItems.map((item) => (
-                  <div key={item.product.id} className="p-3.5 flex gap-3 items-start group" id={`cart-row-${item.product.id}`}>
-                    {/* Tiny thumbnail */}
-                    <div className="w-16 h-16 rounded-lg bg-gray-50 flex items-center justify-center p-1 border border-brand-gray-light flex-shrink-0">
-                      <ZippiProductImage
-                        image={item.product.image}
-                        name={item.product.name}
-                        category={item.product.category}
-                        className="w-full h-full flex items-center justify-center animate-fade-in"
-                        imageClassName="object-contain max-h-14"
-                        fallbackSize="xs"
-                      />
-                    </div>
+                {cartItems.map((item) => {
+                  const itemPrice = getItemPrice(item);
+                  const itemKey = `${item.product.id}-${item.selectedUnit || item.product.unit}`;
+                  return (
+                    <div key={itemKey} className="p-3.5 flex gap-3 items-start group" id={`cart-row-${itemKey}`}>
+                      {/* Tiny thumbnail */}
+                      <div className="w-16 h-16 rounded-lg bg-gray-50 flex items-center justify-center p-1 border border-brand-gray-light flex-shrink-0">
+                        <ZippiProductImage
+                          image={item.product.image}
+                          name={item.product.name}
+                          category={item.product.category}
+                          className="w-full h-full flex items-center justify-center animate-fade-in"
+                          imageClassName="object-contain max-h-14"
+                          fallbackSize="xs"
+                        />
+                      </div>
 
-                    {/* text descriptive info */}
-                    <div className="flex-grow space-y-0.5 min-w-0">
-                      <h4 className="font-bold text-[13px] text-brand-charcoal line-clamp-1 group-hover:text-brand-blue transition-colors">
-                        {item.product.name}
-                      </h4>
-                      <p className="text-[10px] text-brand-gray font-medium">Unit: {item.product.unit}</p>
-                      
-                      {/* Pricing sum */}
-                      <div className="flex items-baseline gap-1 pt-0.5">
-                        <span className="text-[11px] font-bold text-brand-charcoal">LKR</span>
-                        <span className="text-xs font-black text-brand-charcoal">
-                          {(item.product.price * item.quantity).toLocaleString()}
-                        </span>
-                        {item.quantity > 1 && (
-                          <span className="text-[10px] text-brand-gray">
-                            (LKR {item.product.price} each)
+                      {/* text descriptive info */}
+                      <div className="flex-grow space-y-0.5 min-w-0">
+                        <h4 className="font-bold text-[13px] text-brand-charcoal line-clamp-1 group-hover:text-brand-blue transition-colors">
+                          {item.product.name}
+                        </h4>
+                        <p className="text-[10px] text-brand-gray font-medium">Unit: {item.selectedUnit || item.product.unit}</p>
+                        
+                        {/* Pricing sum */}
+                        <div className="flex items-baseline gap-1 pt-0.5">
+                          <span className="text-[11px] font-bold text-brand-charcoal">LKR</span>
+                          <span className="text-xs font-black text-brand-charcoal">
+                            {(itemPrice * item.quantity).toLocaleString()}
                           </span>
-                        )}
+                          {item.quantity > 1 && (
+                            <span className="text-[10px] text-brand-gray">
+                              (LKR {itemPrice} each)
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Action button counters and deletes */}
+                      <div className="flex flex-col items-end justify-between h-16 self-center select-none">
+                        <button 
+                          onClick={() => onRemoveItem(item.product.id, item.selectedUnit)}
+                          className="text-brand-gray hover:text-brand-red p-1 transition-colors rounded hover:bg-gray-100 cursor-pointer"
+                          title="Delete item"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+
+                        {/* Incremental box */}
+                        <div className="flex items-center border border-brand-gray-mid rounded-lg h-7 overflow-hidden bg-brand-yellow-light/20">
+                          <button
+                            onClick={() => onUpdateQty(item.product.id, item.selectedUnit, -1)}
+                            className="w-6 h-full hover:bg-brand-yellow-light flex items-center justify-center text-brand-charcoal text-xs cursor-pointer"
+                          >
+                            <Minus className="w-2.5 h-2.5" strokeWidth={3} />
+                          </button>
+                          <span className="text-xs font-bold text-brand-charcoal px-2">
+                            {item.quantity}
+                          </span>
+                          <button
+                            onClick={() => onUpdateQty(item.product.id, item.selectedUnit, 1)}
+                            className="w-6 h-full hover:bg-brand-yellow-light flex items-center justify-center text-brand-charcoal text-xs cursor-pointer"
+                          >
+                            <Plus className="w-2.5 h-2.5" strokeWidth={3} />
+                          </button>
+                        </div>
                       </div>
                     </div>
-
-                    {/* Action button counters and deletes */}
-                    <div className="flex flex-col items-end justify-between h-16 self-center select-none">
-                      <button 
-                        onClick={() => onRemoveItem(item.product.id)}
-                        className="text-brand-gray hover:text-brand-red p-1 transition-colors rounded hover:bg-gray-100 cursor-pointer"
-                        title="Delete item"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-
-                      {/* Incremental box */}
-                      <div className="flex items-center border border-brand-gray-mid rounded-lg h-7 overflow-hidden bg-brand-yellow-light/20">
-                        <button
-                          onClick={() => onUpdateQty(item.product.id, -1)}
-                          className="w-6 h-full hover:bg-brand-yellow-light flex items-center justify-center text-brand-charcoal text-xs cursor-pointer"
-                        >
-                          <Minus className="w-2.5 h-2.5" strokeWidth={3} />
-                        </button>
-                        <span className="text-xs font-bold text-brand-charcoal px-2">
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={() => onUpdateQty(item.product.id, 1)}
-                          className="w-6 h-full hover:bg-brand-yellow-light flex items-center justify-center text-brand-charcoal text-xs cursor-pointer"
-                        >
-                          <Plus className="w-2.5 h-2.5" strokeWidth={3} />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Coupon code system */}

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   Home, 
   Layers, 
@@ -32,11 +32,17 @@ import {
   HelpCircle,
   Truck,
   Phone,
-  ArrowRight
+  ArrowRight,
+  ArrowLeft,
+  Share2,
+  MoreVertical,
+  Edit
 } from 'lucide-react';
 
-import { Product, Category, CartItem, Address, Order } from './types';
+import { Product, CartItem, Address, Order, Category } from './types';
 import { PRODUCTS, CATEGORIES, INITIAL_ADDRESSES, ADS_CAROUSEL } from './data';
+import { motion, AnimatePresence } from 'motion/react';
+import { triggerHapticFeedback } from './utils';
 
 import Logo from './components/Logo';
 import ProductCard from './components/ProductCard';
@@ -53,7 +59,6 @@ import { ZippiBottomNav } from './components/ZippiLibrary';
 import FilterBottomSheet from './components/FilterBottomSheet';
 import ZippiSplashScreen from './components/ZippiSplashScreen';
 import FlashDealsTimer from './components/FlashDealsTimer';
-import ZippiProductImage, { ZippiCategoryImage } from './components/ZippiProductImage';
 
 const DEALS_OPTIONS = [
   "Grand Lifestyle Sale",
@@ -81,27 +86,34 @@ const BRANDS_OPTIONS = [
 ];
 
 const HOME_CATEGORIES = [
-  { id: 'grocery', name: 'Grocery', emoji: '🍎', image: '/category-veggies.png', sale: true },
-  { id: 'pharmacy', name: 'Pharmacy', emoji: '💊', image: '/category-personal.png', sale: false },
-  { id: 'baby-care', name: 'Baby Care', emoji: '🍼', image: '/category-baby.png', sale: false },
-  { id: 'meat', name: 'Meat', emoji: '🥩', image: '/category-meats.png', sale: false },
-  { id: 'bakery-main', name: 'Bakery', emoji: '🥐', image: '/category-bakery.png', sale: false },
-  { id: 'fancy-cosmetics', name: 'Fancy & Cosmetics', emoji: '✨', image: '/category-sweets.png', sale: false },
-  { id: 'masala', name: 'Masala', emoji: '🌶️', image: '/category-pantry.png', sale: true },
-  { id: 'car-rental', name: 'Car Rental', emoji: '🚗', image: '/category-frozen.png', sale: false },
+  { id: 'veggies', name: 'Fresh Produce', emoji: '🥦', image: 'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=150&auto=format&fit=crop&q=80', sale: true },
+  { id: 'dairy', name: 'Dairy & Eggs', emoji: '🥛', image: 'https://images.unsplash.com/photo-1516448620398-c5f44bf9f441?w=150&auto=format&fit=crop&q=80', sale: false },
+  { id: 'meats', name: 'Meat & Seafood', emoji: '🥩', image: 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=150&auto=format&fit=crop&q=80', sale: false },
+  { id: 'bakery', name: 'Bakery', emoji: '🍞', image: 'https://images.unsplash.com/photo-1549931319-a545dcf3bc73?w=150&auto=format&fit=crop&q=80', sale: false },
+  { id: 'beverages', name: 'Beverages', emoji: '🧃', image: 'https://images.unsplash.com/photo-1541167760496-1628856ab772?w=150&auto=format&fit=crop&q=80', sale: false },
+  { id: 'snacks', name: 'Snacks', emoji: '🍿', image: 'https://images.unsplash.com/photo-1511125341079-05a909dd6802?w=150&auto=format&fit=crop&q=80', sale: false },
+  { id: 'frozen', name: 'Frozen', emoji: '❄️', image: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=150&auto=format&fit=crop&q=80', sale: true },
+  { id: 'cleaning', name: 'Cleaning', emoji: '🧹', image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=150&auto=format&fit=crop&q=80', sale: false },
 ];
 
 const BRANDS_LIST = ['All', 'Kotmale', 'Pelwatte', 'Araliya', 'Dilmah'];
 
 const DETAILED_CATEGORIES = [
-  { id: 'grocery', name: 'Grocery', image: '/category-veggies.png' },
-  { id: 'pharmacy', name: 'Pharmacy', image: '/category-personal.png' },
-  { id: 'baby-care', name: 'Baby Care', image: '/category-baby.png' },
-  { id: 'meat', name: 'Meat', image: '/category-meats.png' },
-  { id: 'bakery-main', name: 'Bakery', image: '/category-bakery.png' },
-  { id: 'fancy-cosmetics', name: 'Fancy & Cosmetics', image: '/category-sweets.png' },
-  { id: 'masala', name: 'Masala', image: '/category-pantry.png' },
-  { id: 'car-rental', name: 'Car Rental', image: '/category-frozen.png' },
+  { id: 'veggies', name: 'Fresh Produce', image: 'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=300&auto=format&fit=crop&q=80' },
+  { id: 'dairy', name: 'Dairy & Eggs', image: 'https://images.unsplash.com/photo-1516448620398-c5f44bf9f441?w=300&auto=format&fit=crop&q=80' },
+  { id: 'meats', name: 'Meat & Seafood', image: 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=300&auto=format&fit=crop&q=80' },
+  { id: 'bakery', name: 'Bakery & Bread', image: 'https://images.unsplash.com/photo-1549931319-a545dcf3bc73?w=300&auto=format&fit=crop&q=80' },
+  { id: 'beverages', name: 'Beverages', image: 'https://images.unsplash.com/photo-1541167760496-1628856ab772?w=300&auto=format&fit=crop&q=80' },
+  { id: 'snacks', name: 'Snacks & Chips', image: 'https://images.unsplash.com/photo-1511125341079-05a909dd6802?w=300&auto=format&fit=crop&q=80' },
+  { id: 'frozen', name: 'Frozen Foods', image: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=300&auto=format&fit=crop&q=80' },
+  { id: 'cleaning', name: 'Cleaning & Home', image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=300&auto=format&fit=crop&q=80' },
+  { id: 'personal', name: 'Personal Care', image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=300&auto=format&fit=crop&q=80' },
+  { id: 'baby', name: 'Baby & Kids', image: 'https://images.unsplash.com/photo-1515488042361-404e9250afef?w=300&auto=format&fit=crop&q=80' },
+  { id: 'breakfast', name: 'Breakfast', image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=300&auto=format&fit=crop&q=80' },
+  { id: 'canned', name: 'Canned & Dry Goods', image: 'https://images.unsplash.com/photo-1536640712247-c57530c1737e?w=300&auto=format&fit=crop&q=80' },
+  { id: 'pantry', name: 'Oils & Condiments', image: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=300&auto=format&fit=crop&q=80' },
+  { id: 'sweets', name: 'Sweets & Chocolates', image: 'https://images.unsplash.com/photo-1511381939415-e44015466834?w=300&auto=format&fit=crop&q=80' },
+  { id: 'health', name: 'Health Foods', image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=300&auto=format&fit=crop&q=80' }
 ];
 
 // Define list of IDs for home marquee sections
@@ -149,61 +161,123 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'home' | 'categories' | 'deals' | 'account' | 'cart'>('home');
   const [showSplash, setShowSplash] = useState(true);
 
-  // Dynamic backend-derived state variables
-  const [products, setProducts] = useState<Product[]>(PRODUCTS);
-  const [categories, setCategories] = useState<Category[]>(CATEGORIES);
-  const [banners, setBanners] = useState<any[]>(ADS_CAROUSEL);
+  // Dynamic products and categories loaded from backend
+  const [activeProducts, setActiveProducts] = useState<Product[]>(PRODUCTS);
+  const [activeCategories, setActiveCategories] = useState<Category[]>(() => [
+    // Parents
+    { id: 'grocery', name: 'Grocery', slug: 'grocery', imageUrl: 'https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=120&auto=format&fit=crop&q=80', icon: '🛒' },
+    { id: 'pharmacy', name: 'Pharmacy', slug: 'pharmacy', imageUrl: 'https://images.unsplash.com/photo-1584017911766-d451b3d0e843?w=120&auto=format&fit=crop&q=80', icon: '💊' },
+    { id: 'baby', name: 'Baby Care', slug: 'baby', imageUrl: 'https://images.unsplash.com/photo-1515488042361-404e9250afef?w=120&auto=format&fit=crop&q=80', icon: '👶' },
+    { id: 'meat', name: 'Meat', slug: 'meat', imageUrl: 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=120&auto=format&fit=crop&q=80', icon: '🥩' },
+    { id: 'bakery', name: 'Bakery', slug: 'bakery', imageUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=120&auto=format&fit=crop&q=80', icon: '🍞' },
+    { id: 'fancy', name: 'Fancy & Cosmetics', slug: 'fancy', imageUrl: 'https://images.unsplash.com/photo-1511381939415-e44015466834?w=120&auto=format&fit=crop&q=80', icon: '💄' },
+    { id: 'masala', name: 'Masala', slug: 'masala', imageUrl: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=120&auto=format&fit=crop&q=80', icon: '🌶️' },
+    { id: 'car_rental', name: 'Car Rental', slug: 'car_rental', imageUrl: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=120&auto=format&fit=crop&q=80', icon: '🚗' },
+    
+    // Children
+    { id: 'veggies', name: 'Fruits & Vegetables', slug: 'veggies', parentSlug: 'grocery', icon: '🥗' },
+    { id: 'dairy', name: 'Dairy & Eggs', slug: 'dairy', parentSlug: 'grocery', icon: '🧀' },
+    { id: 'pantry', name: 'Pantry & Staples', slug: 'pantry', parentSlug: 'grocery', icon: '📦' },
+    { id: 'snacks', name: 'Snacks & Sweets', slug: 'snacks', parentSlug: 'grocery', icon: '🍪' },
+    { id: 'beverages', name: 'Beverages', slug: 'beverages', parentSlug: 'grocery', icon: '🥤' },
+    { id: 'frozen', name: 'Frozen Food', slug: 'frozen', parentSlug: 'grocery', icon: '❄️' },
+    { id: 'cleaning', name: 'Cleaning & Home', slug: 'cleaning', parentSlug: 'grocery', icon: '🧼' },
+    
+    { id: 'bakery-breads', name: 'Breads & Buns', slug: 'bakery-breads', parentSlug: 'bakery', icon: '🍞' },
+    { id: 'bakery-cakes', name: 'Cakes & Pastries', slug: 'bakery-cakes', parentSlug: 'bakery', icon: '🍰' },
+    { id: 'bakery-cookies', name: 'Cookies & Savories', slug: 'bakery-cookies', parentSlug: 'bakery', icon: '🍪' },
+    
+    { id: 'health_presc', name: 'Prescription Drugs', slug: 'health_presc', parentSlug: 'pharmacy', icon: '🩺' },
+    { id: 'health_otc', name: 'OTC Medicine', slug: 'health_otc', parentSlug: 'pharmacy', icon: '💊' },
+    { id: 'health_vit', name: 'Wellness & Vitamins', slug: 'health_vit', parentSlug: 'pharmacy', icon: '🌿' },
+    { id: 'health_safety', name: 'First Aid & Safety', slug: 'health_safety', parentSlug: 'pharmacy', icon: '🩹' },
+
+    { id: 'baby_diap', name: 'Baby Diapers & Wipes', slug: 'baby_diap', parentSlug: 'baby', icon: '🧻' },
+    { id: 'baby_food', name: 'Baby Food & Formula', slug: 'baby_food', parentSlug: 'baby', icon: '🍼' },
+    { id: 'baby_skin', name: 'Baby Bath & Skin', slug: 'baby_skin', parentSlug: 'baby', icon: '🧴' },
+    { id: 'baby_toys', name: 'Toys & Gear', slug: 'baby_toys', parentSlug: 'baby', icon: '🧸' },
+
+    { id: 'meats_chicken', name: 'Chicken', slug: 'meats_chicken', parentSlug: 'meat', icon: '📦' },
+    { id: 'meats_beef_mutton', name: 'Beef & Mutton', slug: 'meats_beef_mutton', parentSlug: 'meat', icon: '📦' },
+    { id: 'meats_seafood', name: 'Seafood', slug: 'meats_seafood', parentSlug: 'meat', icon: '📦' },
+    { id: 'meats_coldcuts', name: 'Sausage & Cold Cuts', slug: 'meats_coldcuts', parentSlug: 'meat', icon: '📦' },
+
+    { id: 'sweets', name: 'Chocolates & Candies', slug: 'sweets', parentSlug: 'fancy', icon: '🍬' },
+    { id: 'personal_makeup', name: 'Makeup & Beauty', slug: 'personal_makeup', parentSlug: 'fancy', icon: '💄' },
+    { id: 'personal_perf', name: 'Perfumes & Fragrances', slug: 'personal_perf', parentSlug: 'fancy', icon: '✨' },
+    { id: 'snacks_gift', name: 'Gift Boxes & Hampers', slug: 'snacks_gift', parentSlug: 'fancy', icon: '🎁' },
+
+    { id: 'pantry_spices', name: 'Spices & Powders', slug: 'pantry_spices', parentSlug: 'masala', icon: '🌶️' },
+    { id: 'pantry_pastes', name: 'Pastes & Sauces', slug: 'pantry_pastes', parentSlug: 'masala', icon: '🍲' },
+    { id: 'pantry_herbs', name: 'Herbs & Seasonings', slug: 'pantry_herbs', parentSlug: 'masala', icon: '🌿' },
+    { id: 'pantry_whole', name: 'Whole Spices', slug: 'pantry_whole', parentSlug: 'masala', icon: '🍂' },
+
+    { id: 'car_rental_hatch', name: 'Hatchbacks & Sedans', slug: 'car_rental_hatch', parentSlug: 'car_rental', icon: '🚗' },
+    { id: 'car_rental_suv', name: 'SUVs & Jeeps', slug: 'car_rental_suv', parentSlug: 'car_rental', icon: '🚙' },
+    { id: 'car_rental_van', name: 'Vans & Buses', slug: 'car_rental_van', parentSlug: 'car_rental', icon: '🚐' }
+  ]);
 
   useEffect(() => {
-    let active = true;
-    const loadBackendData = async () => {
+    const loadDynamicData = async () => {
       try {
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
-        const [prodRes, catRes, bannerRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/products`).then(res => res.json()),
-          fetch(`${API_BASE_URL}/categories`).then(res => res.json()),
-          fetch(`${API_BASE_URL}/banners`).then(res => res.json())
+        const [catRes, prodRes] = await Promise.all([
+          fetch('/api/categories'),
+          fetch('/api/products?limit=200')
         ]);
-        if (!active) return;
-        const productsList = prodRes?.success && prodRes.data?.products ? prodRes.data.products : null;
-        const categoriesList = catRes?.success && Array.isArray(catRes.data) ? catRes.data : null;
-        const bannersList = bannerRes?.success && Array.isArray(bannerRes.data) ? bannerRes.data : null;
 
-        if (productsList && Array.isArray(productsList)) {
-          const mappedProducts = productsList.map((p: any) => ({
-            id: p.id,
-            name: p.name,
-            description: p.description,
-            category: p.categorySlug || p.category_slug || p.category,
-            price: Number(p.price),
-            originalPrice: p.originalPrice !== undefined ? Number(p.originalPrice) : (p.original_price !== undefined ? Number(p.original_price) : undefined),
-            discountPercent: p.discountPercent !== undefined ? Number(p.discountPercent) : (p.discount_percent !== undefined ? Number(p.discount_percent) : undefined),
-            unit: p.unit,
-            image: p.imageUrl || p.image_url || p.image,
-            popular: !!p.popular,
-            stock: p.stock !== undefined ? Number(p.stock) : 0,
-            rating: p.rating !== undefined ? Number(p.rating) : 5,
-            reviewsCount: p.reviewsCount !== undefined ? Number(p.reviewsCount) : (p.reviews_count !== undefined ? Number(p.reviews_count) : 0)
-          }));
-          setProducts(mappedProducts);
+        if (catRes.ok) {
+          const catJson = await catRes.json();
+          if (catJson.success && Array.isArray(catJson.data)) {
+            const mapped = catJson.data.map((c: any) => ({
+              id: c.slug,
+              name: c.name,
+              slug: c.slug,
+              icon: c.icon,
+              imageUrl: c.imageUrl,
+              parentSlug: c.parentSlug,
+              sortOrder: c.sortOrder,
+              isActive: c.isActive
+            }));
+            if (mapped.length > 0) {
+              setActiveCategories(mapped);
+            }
+          }
         }
-        if (categoriesList && Array.isArray(categoriesList)) {
-          const mappedCategories = categoriesList.map((c: any) => ({
-            id: c.slug || c.id,
-            name: c.name,
-            icon: c.icon
-          }));
-          setCategories(mappedCategories);
-        }
-        if (bannersList && Array.isArray(bannersList)) {
-          setBanners(bannersList);
+
+        if (prodRes.ok) {
+          const prodJson = await prodRes.json();
+          if (prodJson.success && prodJson.data && Array.isArray(prodJson.data.products)) {
+            const mapped = prodJson.data.products.map((p: any) => ({
+              id: p.id,
+              name: p.name,
+              description: p.description || '',
+              category: p.categorySlug || '',
+              price: Number(p.price),
+              originalPrice: p.originalPrice ? Number(p.originalPrice) : undefined,
+              discountPercent: p.discountPercent ? Number(p.discountPercent) : undefined,
+              unit: p.unit || '',
+              image: p.imageUrl || 'https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=500&auto=format&fit=crop&q=80',
+              popular: !!p.popular,
+              stock: Number(p.stock || 0),
+              rating: Number(p.rating || 5.0),
+              reviewsCount: Number(p.reviewsCount || 0),
+              variants: p.variants ? p.variants.map((v: any) => ({
+                unit: v.unit,
+                price: Number(v.price),
+                originalPrice: v.originalPrice ? Number(v.originalPrice) : undefined,
+                stock: v.stock !== null && v.stock !== undefined ? Number(v.stock) : undefined
+              })) : undefined
+            }));
+            if (mapped.length > 0) {
+              setActiveProducts(mapped);
+            }
+          }
         }
       } catch (err) {
-        console.warn('Backend server unreachable. Falling back to offline mock datasets.', err);
+        console.error("Failed to load live catalog", err);
       }
     };
-    loadBackendData();
-    return () => { active = false; };
+    loadDynamicData();
   }, []);
 
   // Interactive Switcher Tile Active ID
@@ -212,19 +286,6 @@ export default function App() {
   // Filter conditions & text searching states
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTabCategory, setSelectedTabCategory] = useState<string | null>(null);
-
-  // Group DETAILED_CATEGORIES into rows of 3 for the accordion grid structure
-  const categoryRows = useMemo(() => {
-    const rows: (typeof DETAILED_CATEGORIES)[] = [];
-    const size = 3;
-    for (let i = 0; i < DETAILED_CATEGORIES.length; i += size) {
-      rows.push(DETAILED_CATEGORIES.slice(i, i + size));
-    }
-    return rows;
-  }, []);
-
-
   
   // Header Switch/Feature States
   const [fastDeliveryFilter, setFastDeliveryFilter] = useState(true); // default active as yellow
@@ -239,72 +300,113 @@ export default function App() {
 
   // Swipeable carousel banner state
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [slideStates, setSlideStates] = useState<('active' | 'entering' | 'exiting' | '')[]>(['active', '', '']);
   const currentSlideRef = useRef(0);
   const isHoveredRef = useRef(false);
-  const touchStartXRef = useRef(0);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const lastInteractionTime = useRef<number>(Date.now());
+  const isDraggingRef = useRef(false);
+  const startXRef = useRef(0);
+  const scrollLeftRef = useRef(0);
 
   const goToSlide = React.useCallback((next: number) => {
-    const prev = currentSlideRef.current;
-    if (prev === next) return;
-
-    setSlideStates((currentStates) => {
-      const nextStates = [...currentStates];
-      for (let i = 0; i < nextStates.length; i++) {
-        if (nextStates[i] === 'exiting' || nextStates[i] === 'entering') {
-          nextStates[i] = '';
-        }
-      }
-      nextStates[prev] = 'exiting';
-      nextStates[next] = 'entering';
-      return nextStates;
-    });
-
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        setSlideStates((currentStates) => {
-          const nextStates = [...currentStates];
-          if (nextStates[next] === 'entering') {
-            nextStates[next] = 'active';
-          }
-          return nextStates;
-        });
+    lastInteractionTime.current = Date.now();
+    const container = scrollContainerRef.current;
+    if (container) {
+      const slideWidth = container.clientWidth;
+      container.scrollTo({
+        left: next * slideWidth,
+        behavior: 'smooth'
       });
-    });
-
-    setTimeout(() => {
-      setSlideStates((currentStates) => {
-        const nextStates = [...currentStates];
-        if (nextStates[prev] === 'exiting') {
-          nextStates[prev] = '';
-        }
-        return nextStates;
-      });
-    }, 600);
-
-    currentSlideRef.current = next;
-    setCurrentSlide(next);
+      currentSlideRef.current = next;
+      setCurrentSlide(next);
+    }
   }, []);
 
-  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-    touchStartXRef.current = e.touches[0].clientX;
+  const handleTouchStart = () => {
+    lastInteractionTime.current = Date.now();
   };
 
-  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
-    const diff = touchStartXRef.current - e.changedTouches[0].clientX;
-    const slidesCount = 3;
-    if (diff > 50) {
-      const next = (currentSlideRef.current + 1) % slidesCount;
-      goToSlide(next);
-    } else if (diff < -50) {
-      const next = (currentSlideRef.current - 1 + slidesCount) % slidesCount;
-      goToSlide(next);
+  const handleTouchMove = () => {
+    lastInteractionTime.current = Date.now();
+  };
+
+  const handleTouchEnd = () => {
+    lastInteractionTime.current = Date.now();
+  };
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!scrollContainerRef.current) return;
+    isDraggingRef.current = true;
+    lastInteractionTime.current = Date.now();
+    startXRef.current = e.pageX - scrollContainerRef.current.offsetLeft;
+    scrollLeftRef.current = scrollContainerRef.current.scrollLeft;
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDraggingRef.current || !scrollContainerRef.current) return;
+    e.preventDefault();
+    lastInteractionTime.current = Date.now();
+    const x = e.pageX - scrollContainerRef.current.offsetLeft;
+    const walk = (x - startXRef.current) * 1.5;
+    scrollContainerRef.current.scrollLeft = scrollLeftRef.current - walk;
+  };
+
+  const handleMouseUp = () => {
+    if (!isDraggingRef.current || !scrollContainerRef.current) return;
+    isDraggingRef.current = false;
+    lastInteractionTime.current = Date.now();
+
+    const container = scrollContainerRef.current;
+    const slideWidth = container.clientWidth || 1;
+    const nearestIndex = Math.round(container.scrollLeft / slideWidth);
+    const targetIndex = Math.max(0, Math.min(2, nearestIndex));
+    
+    container.scrollTo({
+      left: targetIndex * slideWidth,
+      behavior: 'smooth'
+    });
+    currentSlideRef.current = targetIndex;
+    setCurrentSlide(targetIndex);
+  };
+
+  const handleMouseLeave = () => {
+    if (isDraggingRef.current) {
+      handleMouseUp();
+    }
+  };
+
+  const handleScroll = () => {
+    if (!scrollContainerRef.current) return;
+    lastInteractionTime.current = Date.now();
+
+    const container = scrollContainerRef.current;
+    const slideWidth = container.clientWidth || 1;
+    const index = Math.round(container.scrollLeft / slideWidth);
+    const targetIndex = Math.max(0, Math.min(2, index));
+
+    if (targetIndex !== currentSlideRef.current) {
+      currentSlideRef.current = targetIndex;
+      setCurrentSlide(targetIndex);
     }
   };
 
   // Wishlist list state - defaults to index bananas and butter item values
   const [wishlist, setWishlist] = useState<string[]>(['f1', 'd1']);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
+
+  // Haptic feedback preference state (defaults to true)
+  const [isHapticEnabled, setIsHapticEnabled] = useState<boolean>(() => {
+    return localStorage.getItem('zippi_haptic_enabled') !== 'false';
+  });
+
+  const handleToggleHaptic = () => {
+    const nextVal = !isHapticEnabled;
+    setIsHapticEnabled(nextVal);
+    localStorage.setItem('zippi_haptic_enabled', String(nextVal));
+    if (nextVal) {
+      triggerHapticFeedback('light');
+    }
+  };
 
   // Simulated Camera OCR Scan Popup state
   const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -344,9 +446,15 @@ export default function App() {
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [newLabel, setNewLabel] = useState('Home');
   const [newDetails, setNewDetails] = useState('');
+  const [addressTab, setAddressTab] = useState<'address' | 'locker'>('address');
+  const [addressSearch, setAddressSearch] = useState('');
+  const [addressOptionsItem, setAddressOptionsItem] = useState<Address | null>(null);
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
 
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [browsingCategory, setBrowsingCategory] = useState<string | null>(null);
+  const [selectedMainCategory, setSelectedMainCategory] = useState<string | null>('grocery');
+  const [categoriesToast, setCategoriesToast] = useState<string | null>(null);
 
   // Drawer / details views overlays
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -387,16 +495,26 @@ export default function App() {
     return Math.min(score, 100);
   }, [userPhone, userGender, userCity]);
 
-  // Auto carousel rotation with pause on hover
+  // Auto carousel rotation with user interaction checking & smooth scrolling
   useEffect(() => {
     const timer = setInterval(() => {
-      if (!isHoveredRef.current) {
+      // If no interaction for 4.5 seconds, auto-scroll to the next slide
+      if (!isHoveredRef.current && Date.now() - lastInteractionTime.current >= 4500) {
         const next = (currentSlideRef.current + 1) % 3;
-        goToSlide(next);
+        const container = scrollContainerRef.current;
+        if (container) {
+          const slideWidth = container.clientWidth;
+          container.scrollTo({
+            left: next * slideWidth,
+            behavior: 'smooth'
+          });
+          currentSlideRef.current = next;
+          setCurrentSlide(next);
+        }
       }
-    }, 4000);
+    }, 1000);
     return () => clearInterval(timer);
-  }, [goToSlide]);
+  }, []);
 
   // Synchronize cart to localStorage on modification
   useEffect(() => {
@@ -423,56 +541,97 @@ export default function App() {
     localStorage.setItem('zippi_language', selectedLanguage);
   }, [userName, userEmail, userPhone, userGender, userCity, selectedLanguage]);
 
+  // Auto dismiss category toast alerts
+  useEffect(() => {
+    if (categoriesToast) {
+      const timer = setTimeout(() => setCategoriesToast(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [categoriesToast]);
+
   // Handle Incremental addition to cart
-  const handleAddToCart = (product: Product) => {
+  const handleAddToCart = (product: Product, selectedUnit?: string) => {
+    triggerHapticFeedback('double');
+    const unit = selectedUnit || (product.variants && product.variants.length > 0 ? product.variants[0].unit : product.unit);
     setCart((prevCart) => {
-      const match = prevCart.find((i) => i.product.id === product.id);
+      const match = prevCart.find((i) => i.product.id === product.id && (i.selectedUnit || i.product.unit) === unit);
       if (match) {
         return prevCart.map((i) => 
-          i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i
+          i.product.id === product.id && (i.selectedUnit || i.product.unit) === unit ? { ...i, quantity: i.quantity + 1 } : i
         );
       }
-      return [...prevCart, { product, quantity: 1 }];
+      return [...prevCart, { product, quantity: 1, selectedUnit: unit }];
     });
   };
 
-  const handleRemoveOne = (product: Product) => {
+  const handleRemoveOne = (product: Product, selectedUnit?: string) => {
+    triggerHapticFeedback('light');
+    const unit = selectedUnit || (product.variants && product.variants.length > 0 ? product.variants[0].unit : product.unit);
     setCart((prevCart) => {
-      const match = prevCart.find((i) => i.product.id === product.id);
+      const match = prevCart.find((i) => i.product.id === product.id && (i.selectedUnit || i.product.unit) === unit);
       if (match) {
         if (match.quantity <= 1) {
-          return prevCart.filter((i) => i.product.id !== product.id);
+          return prevCart.filter((i) => !(i.product.id === product.id && (i.selectedUnit || i.product.unit) === unit));
         }
         return prevCart.map((i) => 
-          i.product.id === product.id ? { ...i, quantity: i.quantity - 1 } : i
+          i.product.id === product.id && (i.selectedUnit || i.product.unit) === unit ? { ...i, quantity: i.quantity - 1 } : i
         );
       }
       return prevCart;
     });
   };
 
-  const handleUpdateQty = (productId: string, delta: number) => {
+  const handleUpdateQty = (productId: string, selectedUnit: string | undefined, delta: number) => {
+    triggerHapticFeedback(delta > 0 ? 'double' : 'light');
     setCart((prevCart) => {
-      const match = prevCart.find((i) => i.product.id === productId);
+      const resolvedUnit = selectedUnit || prevCart.find(i => i.product.id === productId)?.product.unit;
+      const match = prevCart.find((i) => i.product.id === productId && (i.selectedUnit || i.product.unit) === resolvedUnit);
       if (match) {
         const nextQty = match.quantity + delta;
         if (nextQty <= 0) {
-          return prevCart.filter((i) => i.product.id !== productId);
+          return prevCart.filter((i) => !(i.product.id === productId && (i.selectedUnit || i.product.unit) === resolvedUnit));
         }
         return prevCart.map((i) =>
-          i.product.id === productId ? { ...i, quantity: nextQty } : i
+          i.product.id === productId && (i.selectedUnit || i.product.unit) === resolvedUnit ? { ...i, quantity: nextQty } : i
         );
       }
       return prevCart;
     });
   };
 
-  const handleRemoveItem = (productId: string) => {
-    setCart((prevCart) => prevCart.filter((i) => i.product.id !== productId));
+  const handleRemoveItem = (productId: string, selectedUnit?: string) => {
+    triggerHapticFeedback('error');
+    setCart((prevCart) => {
+      const resolvedUnit = selectedUnit || prevCart.find(i => i.product.id === productId)?.product.unit;
+      return prevCart.filter((i) => !(i.product.id === productId && (i.selectedUnit || i.product.unit) === resolvedUnit));
+    });
+  };
+
+  const handleUpdateUnit = (productId: string, oldUnit: string | undefined, newUnit: string) => {
+    setCart((prevCart) => {
+      const resolvedOldUnit = oldUnit || prevCart.find(i => i.product.id === productId)?.product.unit;
+      const matchIndex = prevCart.findIndex(i => i.product.id === productId && (i.selectedUnit || i.product.unit) === resolvedOldUnit);
+      if (matchIndex > -1) {
+        const itemToUpdate = prevCart[matchIndex];
+        const existingTargetIndex = prevCart.findIndex(i => i.product.id === productId && (i.selectedUnit || i.product.unit) === newUnit);
+        if (existingTargetIndex > -1 && existingTargetIndex !== matchIndex) {
+          const updated = [...prevCart];
+          updated[existingTargetIndex] = { ...updated[existingTargetIndex], quantity: updated[existingTargetIndex].quantity + itemToUpdate.quantity };
+          return updated.filter((_, idx) => idx !== matchIndex);
+        } else {
+          return prevCart.map((i, idx) =>
+            idx === matchIndex ? { ...i, selectedUnit: newUnit } : i
+          );
+        }
+      }
+      return prevCart;
+    });
   };
 
   // Wishlist toggle function
   const handleToggleWishlist = (productId: string) => {
+    const isAdding = !wishlist.includes(productId);
+    triggerHapticFeedback(isAdding ? 'double' : 'light');
     setWishlist(prev => 
       prev.includes(productId) 
         ? prev.filter(id => id !== productId) 
@@ -490,6 +649,7 @@ export default function App() {
   };
 
   const handleOrderPlaced = (newOrder: Order) => {
+    triggerHapticFeedback('success');
     setOrders((prev) => [newOrder, ...prev]);
     setCart([]);
     setActiveTrackOrder(newOrder); 
@@ -517,21 +677,49 @@ export default function App() {
     e.preventDefault();
     if (!newDetails.trim()) return;
 
-    const added: Address = {
-      id: 'addr-' + Date.now(),
-      label: newLabel,
-      details: newDetails,
-      isDefault: false
-    };
+    triggerHapticFeedback('success');
 
-    setAddresses((prev) => [...prev, added]);
-    setSelectedAddress(added);
-    setNewDetails('');
-    setIsAddressModalOpen(false);
+    if (editingAddressId) {
+      // Edit mode
+      setAddresses((prev) =>
+        prev.map((addr) =>
+          addr.id === editingAddressId
+            ? { ...addr, label: newLabel, details: newDetails }
+            : addr
+        )
+      );
+      
+      // Keep selectedAddress in sync
+      setSelectedAddress((prev) => {
+        if (prev && prev.id === editingAddressId) {
+          return { ...prev, label: newLabel, details: newDetails };
+        }
+        return prev;
+      });
+
+      setEditingAddressId(null);
+      setNewDetails('');
+      setCategoriesToast("Address updated successfully!");
+      setIsAddressModalOpen(false);
+    } else {
+      // Create mode
+      const added: Address = {
+        id: 'addr-' + Date.now(),
+        label: newLabel,
+        details: newDetails,
+        isDefault: false
+      };
+
+      setAddresses((prev) => [...prev, added]);
+      setSelectedAddress(added);
+      setNewDetails('');
+      setCategoriesToast("Address added successfully!");
+      setIsAddressModalOpen(false);
+    }
   };
 
   // Perform Dynamic filtering and sorting of products in accordance with chips states
-  const filteredProducts = products.filter((p) => {
+  const filteredProducts = activeProducts.filter((p) => {
     // 1. Category checklist
     const matchesCategory = selectedCategory === 'all' || p.category === selectedCategory;
     
@@ -572,26 +760,20 @@ export default function App() {
   });
 
   // Calculate separate list values for sections
-  const bestsellerProducts = products.filter(p => p.popular);
-  const freshTodayProducts = products.filter(p => p.category === 'fruits-veggies' || p.category === 'dairy');
+  const bestsellerProducts = activeProducts.filter(p => p.popular);
+  const freshTodayProducts = activeProducts.filter(p => p.category === 'veggies' || p.category === 'fruits' || p.category === 'dairy');
 
-  const trendingProductsMapped = TRENDING_IDS.map(id => products.find(p => p.id === id)).filter((p): p is Product => !!p);
-  const trendingProductsList = trendingProductsMapped.length > 0 
-    ? trendingProductsMapped 
-    : products.filter(p => p.popular).slice(0, 10);
-
-  const freshProductsMapped = FRESH_IDS.map(id => products.find(p => p.id === id)).filter((p): p is Product => !!p);
-  const freshProductsList = freshProductsMapped.length > 0 
-    ? freshProductsMapped 
-    : products.filter(p => p.category === 'fruits-veggies' || p.category === 'dairy').slice(0, 10);
-
-  const flashProductsMapped = FLASH_IDS.map(id => products.find(p => p.id === id)).filter((p): p is Product => !!p);
-  const flashProductsList = flashProductsMapped.length > 0 
-    ? flashProductsMapped 
-    : products.filter(p => p.isFlashDeal || (p.discountPercent !== undefined && p.discountPercent > 0)).slice(0, 10);
+  const trendingProductsList = TRENDING_IDS.map(id => activeProducts.find(p => p.id === id)).filter((p): p is Product => !!p);
+  const freshProductsList = FRESH_IDS.map(id => activeProducts.find(p => p.id === id)).filter((p): p is Product => !!p);
+  const flashProductsList = FLASH_IDS.map(id => activeProducts.find(p => p.id === id)).filter((p): p is Product => !!p);
 
   const cartTotalQty = cart.reduce((acc, i) => acc + i.quantity, 0);
-  const cartSubtotal = cart.reduce((acc, i) => acc + (i.product.price * i.quantity), 0);
+  const cartSubtotal = cart.reduce((acc, i) => {
+    const price = (i.selectedUnit && i.product.variants && i.product.variants.length > 0)
+      ? (i.product.variants.find(v => v.unit === i.selectedUnit)?.price ?? i.product.price)
+      : i.product.price;
+    return acc + (price * i.quantity);
+  }, 0);
 
   // Dynamic predictions list for popular terms
   const searchPredictions = [
@@ -661,7 +843,7 @@ export default function App() {
             wishlist={wishlist}
             onToggleWishlist={handleToggleWishlist}
             onOpenCart={() => setIsCartOpen(true)}
-            products={products}
+            products={activeProducts}
           />
         ) : (
           <>
@@ -845,7 +1027,7 @@ export default function App() {
                 ) : (
                   <div className="grid grid-cols-2 gap-3">
                     {filteredProducts.map((product) => {
-                      const qty = cart.find(i => i.product.id === product.id)?.quantity || 0;
+                      const qty = cart.filter(i => i.product.id === product.id).reduce((sum, item) => sum + item.quantity, 0);
                       return (
                         <ProductCard
                           key={product.id}
@@ -866,16 +1048,26 @@ export default function App() {
                 <div 
                   className="relative px-4 py-2 bg-white select-none cursor-pointer" 
                   id="promo-carousel"
-                  onMouseEnter={() => { isHoveredRef.current = true; }}
-                  onMouseLeave={() => { isHoveredRef.current = false; }}
-                  onTouchStart={handleTouchStart}
-                  onTouchEnd={handleTouchEnd}
+                  onMouseEnter={() => { isHoveredRef.current = true; lastInteractionTime.current = Date.now() + 999999; }}
+                  onMouseLeave={() => { isHoveredRef.current = false; lastInteractionTime.current = Date.now(); }}
                 >
                   <div className="overflow-hidden rounded-2xl">
-                    <div className="relative min-h-[145px] transition-all duration-300">
+                    <div 
+                      ref={scrollContainerRef}
+                      onScroll={handleScroll}
+                      onTouchStart={handleTouchStart}
+                      onTouchMove={handleTouchMove}
+                      onTouchEnd={handleTouchEnd}
+                      onMouseDown={handleMouseDown}
+                      onMouseMove={handleMouseMove}
+                      onMouseUp={handleMouseUp}
+                      onMouseLeave={handleMouseLeave}
+                      className="flex flex-nowrap gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-none select-none rounded-2xl"
+                      style={{ touchAction: 'pan-y', scrollbarWidth: 'none' }}
+                    >
                       
                       {/* Swipeable Slide 0 - Active Green Grocery Banner (Fully Compliant Spec) */}
-                      <div className={`slide ${slideStates[0]} bg-[#2E7D32] text-white p-4 rounded-xl flex justify-between items-center min-h-[145px] relative overflow-hidden`}>
+                      <div className="w-full shrink-0 bg-[#2E7D32] text-white p-4 rounded-xl flex justify-between items-center min-h-[145px] relative overflow-hidden select-none snap-center">
                         {/* Abstract background styling */}
                         <div className="absolute right-0 top-0 bottom-0 w-2/5 bg-white/5 rounded-l-full pointer-events-none transform translate-x-12 scale-110 z-0"></div>
                         
@@ -912,7 +1104,7 @@ export default function App() {
                       </div>
 
                       {/* Slide 1 - TVS King Express Delivery */}
-                      <div className={`slide ${slideStates[1]} bg-[#1565C0] text-white p-4 rounded-xl flex justify-between items-center min-h-[145px] relative overflow-hidden text-left`}>
+                      <div className="w-full shrink-0 bg-[#1565C0] text-white p-4 rounded-xl flex justify-between items-center min-h-[145px] relative overflow-hidden text-left select-none snap-center">
                         <div className="space-y-1 relative z-10 w-[65%]">
                           <span className="text-[9px] uppercase tracking-wider bg-yellow-400 text-brand-charcoal font-black px-1.5 py-0.5 rounded-sm">ZIPPI SPEED</span>
                           <h3 className="text-base font-black tracking-tight leading-tight">COLOMBO FLAT DELIVERIES</h3>
@@ -920,13 +1112,13 @@ export default function App() {
                             LKR 0 shipping fees of fresh meats or veggies on orders above LKR 3,000.
                           </p>
                         </div>
-                        <div className="w-[30%] h-20 relative flex items-center justify-center text-5xl">
+                        <div className="w-[30%] h-20 relative flex items-center justify-center text-5xl select-none">
                           🛵
                         </div>
                       </div>
 
                       {/* Slide 2 - Fresh Milk & Butter Combo specials */}
-                      <div className={`slide ${slideStates[2]} bg-[#FF6F00] text-white p-4 rounded-xl flex justify-between items-center min-h-[145px] relative overflow-hidden text-left`}>
+                      <div className="w-full shrink-0 bg-[#FF6F00] text-white p-4 rounded-xl flex justify-between items-center min-h-[145px] relative overflow-hidden text-left select-none snap-center">
                         <div className="space-y-1 relative z-10 w-[65%]">
                           <span className="text-[9px] uppercase tracking-wider bg-white/20 text-white font-extrabold px-1.5 py-0.5 rounded-sm">KITCHEN DEALS</span>
                           <h3 className="text-base font-black tracking-tight leading-tight">LOCAL DIARY ESSENTIALS</h3>
@@ -934,7 +1126,7 @@ export default function App() {
                             Get up to LKR 150 off on Kotmale Butter & Pelwatte fresh milk assemblies.
                           </p>
                         </div>
-                        <div className="w-[30%] h-20 relative flex items-center justify-center text-5xl">
+                        <div className="w-[30%] h-20 relative flex items-center justify-center text-5xl select-none">
                           🥛
                         </div>
                       </div>
@@ -950,6 +1142,15 @@ export default function App() {
                         onClick={() => goToSlide(idx)}
                         className={`carousel-dot ${currentSlide === idx ? 'active-dot' : ''}`}
                         aria-label={`Slide index ${idx}`}
+                        style={{
+                          background: currentSlide === idx ? '#F5C518' : 'rgba(0, 0, 0, 0.15)',
+                          width: currentSlide === idx ? '20px' : '6px',
+                          height: '6px',
+                          borderRadius: '999px',
+                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                          border: 'none',
+                          cursor: 'pointer'
+                        }}
                       ></button>
                     ))}
                   </div>
@@ -1008,35 +1209,30 @@ export default function App() {
                 {/* ── CATEGORY GRID ── (No title, 4 columns, 2 rows) */}
                 <div className="px-4 py-3 bg-white" id="category-grid-box">
                   <div className="grid grid-cols-4 gap-2.5">
-                    {HOME_CATEGORIES.map((cat) => {
-                      const isActive = selectedCategory === cat.id;
+                    {activeCategories.filter(c => !c.parentSlug).slice(0, 8).map((cat) => {
                       return (
                         <div 
-                          key={cat.id} 
+                          key={cat.slug} 
                           onClick={() => {
-                            setBrowsingCategory(cat.id);
+                            setBrowsingCategory(cat.slug);
                           }}
                           className={`relative rounded-2xl flex flex-col justify-between bg-white border p-1 pt-1.5 pb-2.5 cursor-pointer transition-all hover:border-[#F5C518] hover:shadow-xs active:scale-95 border-gray-200`}
                           style={{ height: '100px', width: '92px' }}
                         >
-                          {cat.sale && (
-                            <span className="absolute top-1 left-1 bg-brand-red text-white font-extrabold text-[8px] px-1 rounded-sm z-10 flex items-center justify-center shadow-xs">
-                              SALE
-                            </span>
-                          )}
                           
                           {/* Category Image - top 70% of card */}
                           <div className="w-full h-[65%] rounded-lg overflow-hidden bg-gray-50/50 flex items-center justify-center p-1 relative">
-                            <ZippiCategoryImage 
-                              image={cat.image} 
-                              name={cat.name} 
-                              id={cat.id}
-                              imageClassName="object-contain w-full h-full max-h-[48px] transform hover:scale-110 transition-transform"
-                              emojiClassName="text-2xl"
+                            <img 
+                              src={cat.imageUrl || 'https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=120&auto=format&fit=crop&q=80'} 
+                              alt={cat.name} 
+                              className="object-contain w-full h-full max-h-[48px] transform hover:scale-110 transition-transform"
+                              referrerPolicy="no-referrer"
                             />
-                            <span className="absolute bottom-0.5 right-0.5 text-[10px] select-none">{cat.emoji}</span>
+                            {cat.icon && (
+                              <span className="absolute bottom-0.5 right-0.5 text-[10px] select-none">{cat.icon}</span>
+                            )}
                           </div>
-
+ 
                           {/* Category Name - center, 12px, dark text */}
                           <div className="h-[35%] flex items-end justify-center pt-1">
                             <span className="text-[11.5px] font-bold text-[#1A1A1A] text-center truncate px-0.5 leading-tight">
@@ -1068,23 +1264,35 @@ export default function App() {
                     </button>
                   </div>
 
-                  <div className="flex gap-3 overflow-x-auto px-4 pb-4 scrollbar-none scroll-smooth">
-                    {trendingProductsList.map((product) => {
-                      const qty = cart.find(i => i.product.id === product.id)?.quantity || 0;
-                      return (
-                        <div className="w-[140px] shrink-0" key={`${product.id}-trend1`}>
-                          <ProductCard
-                            product={product}
-                            cartQty={qty}
-                            onAddToCart={() => handleAddToCart(product)}
-                            onRemoveOne={() => handleRemoveOne(product)}
-                            onViewDetails={() => setActiveDetailProduct(product)}
-                            isWishlisted={wishlist.includes(product.id)}
-                            onToggleWishlist={() => handleToggleWishlist(product.id)}
-                          />
-                        </div>
-                      );
-                    })}
+                  <div 
+                    className="marquee-container"
+                    onTouchStart={(e) => {
+                      const track = e.currentTarget.firstElementChild as HTMLElement;
+                      if (track) track.style.animationPlayState = 'paused';
+                    }}
+                    onTouchEnd={(e) => {
+                      const track = e.currentTarget.firstElementChild as HTMLElement;
+                      if (track) track.style.animationPlayState = 'running';
+                    }}
+                  >
+                    <div className="marquee-track-rtl-s1">
+                      {[...trendingProductsList, ...trendingProductsList].map((product, idx) => {
+                        const qty = cart.filter(i => i.product.id === product.id).reduce((sum, item) => sum + item.quantity, 0);
+                        return (
+                          <div className="w-[140px] shrink-0" key={`${product.id}-trend1-${idx}`}>
+                            <ProductCard
+                              product={product}
+                              cartQty={qty}
+                              onAddToCart={() => handleAddToCart(product)}
+                              onRemoveOne={() => handleRemoveOne(product)}
+                              onViewDetails={() => setActiveDetailProduct(product)}
+                              isWishlisted={wishlist.includes(product.id)}
+                              onToggleWishlist={() => handleToggleWishlist(product.id)}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
 
@@ -1107,23 +1315,35 @@ export default function App() {
                     </button>
                   </div>
 
-                  <div className="flex gap-3 overflow-x-auto px-4 pb-4 scrollbar-none scroll-smooth">
-                    {freshProductsList.map((product) => {
-                      const qty = cart.find(i => i.product.id === product.id)?.quantity || 0;
-                      return (
-                        <div className="w-[140px] shrink-0" key={`${product.id}-fresh`}>
-                          <ProductCard
-                            product={product}
-                            cartQty={qty}
-                            onAddToCart={() => handleAddToCart(product)}
-                            onRemoveOne={() => handleRemoveOne(product)}
-                            onViewDetails={() => setActiveDetailProduct(product)}
-                            isWishlisted={wishlist.includes(product.id)}
-                            onToggleWishlist={() => handleToggleWishlist(product.id)}
-                          />
-                        </div>
-                      );
-                    })}
+                  <div 
+                    className="marquee-container"
+                    onTouchStart={(e) => {
+                      const track = e.currentTarget.firstElementChild as HTMLElement;
+                      if (track) track.style.animationPlayState = 'paused';
+                    }}
+                    onTouchEnd={(e) => {
+                      const track = e.currentTarget.firstElementChild as HTMLElement;
+                      if (track) track.style.animationPlayState = 'running';
+                    }}
+                  >
+                    <div className="marquee-track-ltr">
+                      {[...freshProductsList, ...freshProductsList].map((product, idx) => {
+                        const qty = cart.filter(i => i.product.id === product.id).reduce((sum, item) => sum + item.quantity, 0);
+                        return (
+                          <div className="w-[140px] shrink-0" key={`${product.id}-fresh-${idx}`}>
+                            <ProductCard
+                              product={product}
+                              cartQty={qty}
+                              onAddToCart={() => handleAddToCart(product)}
+                              onRemoveOne={() => handleRemoveOne(product)}
+                              onViewDetails={() => setActiveDetailProduct(product)}
+                              isWishlisted={wishlist.includes(product.id)}
+                              onToggleWishlist={() => handleToggleWishlist(product.id)}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
 
@@ -1149,24 +1369,36 @@ export default function App() {
                     </button>
                   </div>
 
-                  <div className="flex gap-3 overflow-x-auto px-4 pb-4 scrollbar-none scroll-smooth">
-                    {flashProductsList.map((product) => {
-                      const qty = cart.find(i => i.product.id === product.id)?.quantity || 0;
-                      return (
-                        <div className="w-[140px] shrink-0" key={`${product.id}-flash`}>
-                          <ProductCard
-                            product={product}
-                            cartQty={qty}
-                            onAddToCart={() => handleAddToCart(product)}
-                            onRemoveOne={() => handleRemoveOne(product)}
-                            onViewDetails={() => setActiveDetailProduct(product)}
-                            isWishlisted={wishlist.includes(product.id)}
-                            onToggleWishlist={() => handleToggleWishlist(product.id)}
-                            isFlashDeal={true}
-                          />
-                        </div>
-                      );
-                    })}
+                  <div 
+                    className="marquee-container"
+                    onTouchStart={(e) => {
+                      const track = e.currentTarget.firstElementChild as HTMLElement;
+                      if (track) track.style.animationPlayState = 'paused';
+                    }}
+                    onTouchEnd={(e) => {
+                      const track = e.currentTarget.firstElementChild as HTMLElement;
+                      if (track) track.style.animationPlayState = 'running';
+                    }}
+                  >
+                    <div className="marquee-track-rtl-flash">
+                      {[...flashProductsList, ...flashProductsList].map((product, idx) => {
+                        const qty = cart.filter(i => i.product.id === product.id).reduce((sum, item) => sum + item.quantity, 0);
+                        return (
+                          <div className="w-[140px] shrink-0" key={`${product.id}-flash-${idx}`}>
+                            <ProductCard
+                              product={product}
+                              cartQty={qty}
+                              onAddToCart={() => handleAddToCart(product)}
+                              onRemoveOne={() => handleRemoveOne(product)}
+                              onViewDetails={() => setActiveDetailProduct(product)}
+                              isWishlisted={wishlist.includes(product.id)}
+                              onToggleWishlist={() => handleToggleWishlist(product.id)}
+                              isFlashDeal={true}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
 
@@ -1189,7 +1421,7 @@ export default function App() {
 
         {/* VIEWPORT AREA: CATEGORIES DISPLAY DEPARTMENTS */}
         {activeTab === 'categories' && (
-          <div className="flex-grow flex flex-col overflow-y-auto bg-white">
+          <div className="flex-grow flex flex-col overflow-y-auto bg-white relative pb-6" id="categories-viewport">
             
             {/* ── SEARCH BAR (same style as home, clean white) ── */}
             <div className="px-4 pt-4 pb-2 bg-white" id="categories-search-bar-container">
@@ -1209,9 +1441,8 @@ export default function App() {
                     setSearchQuery(e.target.value);
                     setActiveTab('home');
                   }}
-                  className="w-full bg-white text-xs font-semibold pl-10 pr-10 py-3 rounded-full border border-gray-200 placeholder:text-gray-400"
+                  className="w-full bg-white text-xs font-semibold pl-10 pr-10 py-3 rounded-full border border-gray-200 placeholder:text-gray-400 focus:outline-none focus:border-[#F5C518]"
                 />
-
                 {/* Camera icon right */}
                 <button 
                   onClick={triggerCameraScan}
@@ -1223,115 +1454,139 @@ export default function App() {
               </div>
             </div>
 
-            {/* ── CATEGORIES ROW-WISE ACCORDION GRID ── */}
-            <div className="px-4 pt-2 pb-12 space-y-3" id="categories-accordion-container">
-              {categoryRows.map((row, rowIndex) => {
-                const hasSelectedCategory = row.some((cat) => cat.id === selectedTabCategory);
-                return (
-                  <div key={rowIndex} className="space-y-3">
-                    {/* The Grid Row */}
-                    <div className="grid grid-cols-3 gap-2.5">
-                      {row.map((cat) => {
-                        const isSelected = selectedTabCategory === cat.id;
-                        return (
-                          <div
-                            key={cat.id}
-                            onClick={() => {
-                              setSelectedTabCategory(prev => prev === cat.id ? null : cat.id);
-                            }}
-                            className={`rounded-2xl p-2.5 flex flex-col justify-between items-center text-center cursor-pointer border transition-all duration-200 active:scale-95 h-[115px] ${
-                              isSelected 
-                                ? 'bg-white border-gray-300 shadow-sm ring-1 ring-gray-150' 
-                                : 'bg-[#F9F9F9] border-transparent hover:border-gray-200'
-                            }`}
-                            id={`category-card-${cat.id}`}
-                          >
-                            {/* Product image fills top of card */}
-                            <div className="w-full h-[65%] flex items-center justify-center overflow-hidden">
-                              <ZippiCategoryImage 
-                                image={cat.image} 
-                                name={cat.name} 
-                                id={cat.id}
-                                imageClassName="w-full h-full object-contain max-h-[50px] transition-transform duration-300 hover:scale-110" 
-                                emojiClassName="text-3xl"
-                              />
-                            </div>
-                            {/* Category name below image */}
-                            <div className="h-[35%] flex items-center justify-center w-full mt-0.5">
-                              <span className="text-[12px] leading-tight font-extrabold text-brand-charcoal line-clamp-2">
-                                {cat.name}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Subcategories Container under this row if it contains the selected category */}
-                    <div 
-                      className={`accordion-container ${hasSelectedCategory ? 'expanded' : 'pointer-events-none'}`}
-                    >
-                      <div className="h-[1px] bg-gray-150 mb-3" />
-                      <div 
-                        key={selectedTabCategory} 
-                        className="animate-fade-in flex flex-col"
-                      >
-                        {CATEGORIES.filter(c => c.parentSlug === selectedTabCategory || c.parent_slug === selectedTabCategory).map((sub) => {
-                          const repProduct = products.find(p => p.category === sub.id);
+            {/* ── CATEGORIES GRID — Rows with nested inline subcategories ── */}
+            <div className="px-4 pt-2 pb-6 flex-grow flex flex-col gap-3.5" id="categories-grid-container">
+              {(() => {
+                const parentCategories = activeCategories.filter(c => !c.parentSlug);
+                const categoryRows: Category[][] = [];
+                for (let i = 0; i < parentCategories.length; i += 3) {
+                  categoryRows.push(parentCategories.slice(i, i + 3));
+                }
+                return categoryRows.map((row, rowIndex) => {
+                  const rowHasSelected = row.some((cat) => cat.slug === selectedMainCategory);
+                  
+                  return (
+                    <div key={`row-${rowIndex}`} className="flex flex-col gap-3">
+                      {/* The 3-column row grid */}
+                      <div className="grid grid-cols-3 gap-3">
+                        {row.map((cat) => {
+                          const isSelected = selectedMainCategory === cat.slug;
                           return (
                             <div
-                              key={sub.id}
+                              key={cat.slug}
                               onClick={() => {
-                                setBrowsingCategory(sub.id);
+                                setSelectedMainCategory(isSelected ? null : cat.slug);
                               }}
-                              className="bg-[#F5F5F7] hover:bg-gray-100 rounded-[14px] p-3 flex items-center justify-between cursor-pointer transition-all active:scale-[0.98] mb-2.5 border border-gray-100/50"
+                              className={`rounded-[16px] p-2.5 flex flex-col justify-between items-center text-center cursor-pointer transition-all duration-250 active:scale-95 h-[120px] select-none ${
+                                isSelected 
+                                  ? 'bg-white border-2 border-[#1A1A1A] shadow-md ring-2 ring-[#FCE000]/15' 
+                                  : 'bg-[#F9FAFB] border border-gray-100 hover:bg-gray-100 hover:border-gray-200'
+                              }`}
+                              id={`category-card-${cat.slug}`}
                             >
-                              <div className="flex items-center gap-3.5">
-                                {/* Representative Image Container */}
-                                <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center p-2 overflow-hidden border border-gray-150 shrink-0 shadow-2xs">
-                                  {repProduct ? (
-                                    <img 
-                                      src={repProduct.image} 
-                                      alt={sub.name} 
-                                      className="w-full h-full object-contain"
-                                    />
-                                  ) : (
-                                    <span className="text-xl">📦</span>
-                                  )}
-                                </div>
-                                {/* Subcategory name */}
-                                <span className="text-[13.5px] font-extrabold text-[#1A1A1A] text-left">
-                                  {sub.name}
+                              {/* Product image fills top 65% of card */}
+                              <div className="w-full h-[65%] flex items-center justify-center overflow-hidden">
+                                <img 
+                                  src={cat.imageUrl || 'https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=120&auto=format&fit=crop&q=80'} 
+                                  alt={cat.name} 
+                                  className="w-full h-full object-contain max-h-[50px] transition-transform duration-300 hover:scale-110" 
+                                  referrerPolicy="no-referrer"
+                                />
+                              </div>
+                              {/* Category name below image */}
+                              <div className="h-[35%] flex items-center justify-center w-full mt-1">
+                                <span className="text-[11.5px] leading-tight font-extrabold text-[#1A1A1A] line-clamp-2">
+                                  {cat.name}
                                 </span>
                               </div>
-                              <ChevronRight className="w-4 h-4 text-gray-400" />
                             </div>
                           );
                         })}
-
-                        {/* View all subcategory button */}
-                        <div
-                          onClick={() => {
-                            setBrowsingCategory(selectedTabCategory);
-                          }}
-                          className="bg-[#F5F5F7] hover:bg-gray-100 rounded-[14px] p-3 flex items-center justify-between cursor-pointer transition-all active:scale-[0.98] border border-gray-100/50"
-                        >
-                          <div className="flex items-center gap-3.5">
-                            <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center p-3 overflow-hidden border border-gray-150 shrink-0 text-gray-600 shadow-2xs">
-                              <Layers className="w-5 h-5" />
-                            </div>
-                            <span className="text-[13.5px] font-extrabold text-[#1A1A1A] text-left">
-                              View all
-                            </span>
-                          </div>
-                          <ChevronRight className="w-4 h-4 text-gray-400" />
-                        </div>
                       </div>
+
+                      {/* Expandable Subcategories directly underneath this row */}
+                      <AnimatePresence initial={false}>
+                        {rowHasSelected && selectedMainCategory && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
+                            className="overflow-hidden"
+                            id="subcategories-animation-wrapper"
+                          >
+                            <div className="mt-2 pb-2 pt-1 flex flex-col gap-3" id="subcategories-list-container">
+                              <div className="flex flex-col gap-2.5">
+                                {(
+                                  activeCategories.filter(c => c.parentSlug === selectedMainCategory).concat([
+                                    {
+                                      id: selectedMainCategory + '_all',
+                                      slug: selectedMainCategory,
+                                      name: 'View all',
+                                      icon: 'layers',
+                                      parentSlug: selectedMainCategory
+                                    }
+                                  ])
+                                ).map((sub, idx) => (
+                                  <div
+                                    key={`${sub.slug}-${idx}`}
+                                    onClick={() => {
+                                      if (selectedMainCategory === 'car_rental') {
+                                        setCategoriesToast(`${sub.name} service is launching soon in Colombo! Stay tuned.`);
+                                      } else {
+                                        setBrowsingCategory(sub.slug);
+                                      }
+                                    }}
+                                    className="bg-[#F4F5F8] hover:bg-[#EAECF0] active:bg-[#E2E5EA] rounded-[20px] px-4 py-3 flex items-center justify-between cursor-pointer transition-all duration-150 active:scale-[0.99] group text-left h-[78px]"
+                                    id={`subcat-row-${sub.slug}-${idx}`}
+                                  >
+                                    <div className="flex items-center gap-4">
+                                      {/* Left icon wrapper */}
+                                      <div className="w-12 h-12 bg-white rounded-[14px] border border-[#1A1A1A] flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105 shadow-2xs">
+                                        {sub.icon === 'layers' ? (
+                                          <Layers className="w-[18px] h-[18px] text-[#2D3142]" />
+                                        ) : (
+                                          <span className="text-[19px] filter drop-shadow-xs leading-none">
+                                            {sub.icon || '📦'}
+                                          </span>
+                                        )}
+                                      </div>
+                                      
+                                      {/* Subcategory Name */}
+                                      <span className="text-[14.5px] font-extrabold text-[#1A1A1A]">
+                                        {sub.name}
+                                      </span>
+                                    </div>
+
+                                    {/* Naked Chevron right */}
+                                    <div>
+                                      <ChevronRight className="w-4 h-4 text-[#A0AABF] group-hover:text-[#1A1A1A] transition-colors mr-1" />
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                });
+              })()}
             </div>
+
+            {/* Categories coming soon custom floating toast */}
+            {categoriesToast && (
+              <div className="absolute bottom-22 left-6 right-6 mx-auto bg-[#1A1A1A] text-white text-[11px] font-semibold px-4.5 py-3 rounded-xl shadow-xl flex items-center justify-between animate-fade-in z-50 border border-white/10 select-none">
+                <span>{categoriesToast}</span>
+                <button 
+                  onClick={() => setCategoriesToast(null)} 
+                  className="text-brand-yellow font-black uppercase text-[9px] tracking-wider ml-4.5 active:scale-90 cursor-pointer"
+                >
+                  OK
+                </button>
+              </div>
+            )}
 
           </div>
         )}
@@ -1347,7 +1602,7 @@ export default function App() {
             onToggleWishlist={handleToggleWishlist}
             onOpenCart={() => setIsCartOpen(true)}
             setBrowsingCategory={setBrowsingCategory}
-            products={products}
+            products={activeProducts}
           />
         )}
 
@@ -1499,54 +1754,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* ZIPPI CARD PROMO */}
-            <div 
-              onClick={() => setActiveAccountSubModal('card_apply')}
-              className="bg-[#121212] rounded-2xl p-4 border border-zinc-850 text-white cursor-pointer hover:border-zinc-700 transition-all relative overflow-hidden flex items-center justify-between"
-              id="zippi-card-promo-banner"
-            >
-              {/* Abstract glow circles in dark card background */}
-              <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/10 rounded-full blur-2xl"></div>
-
-              <div className="z-10 flex-grow pr-3 max-w-[65%] text-left">
-                <span className="text-[9px] uppercase font-black tracking-widest text-[#FFFBEA] bg-yellow-500/25 px-2 py-0.5 rounded border border-yellow-500/20 mb-2 inline-block">
-                  LIMITED OFFER
-                </span>
-                <h4 className="font-black text-[16px] text-white leading-tight tracking-tight">
-                  Zippi One Credit Card
-                </h4>
-                
-                <p className="text-[11px] text-zinc-400 mt-1 leading-normal font-sans">
-                  Up to 20% savings + Free Zippi One + LKR 5000 Welcome bonus
-                </p>
-                
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setActiveAccountSubModal('card_apply');
-                  }}
-                  className="mt-3 bg-white hover:bg-neutral-100 text-black text-[10px] font-black px-4.5 py-1.5 rounded-full uppercase tracking-wider transition-all select-none cursor-pointer"
-                  id="zippi-card-apply-now"
-                >
-                  APPLY NOW
-                </button>
-              </div>
-
-              {/* Right: Credit card representation */}
-              <div className="relative shrink-0 select-none scale-95 pr-1">
-                <div className="w-24 h-15 bg-gradient-to-tr from-neutral-900 to-zinc-850 hover:to-zinc-800 rounded-lg shadow-lg border border-neutral-800/80 p-2 flex flex-col justify-between relative transform rotate-12 transition-transform">
-                  <div className="flex justify-between items-start">
-                    <div className="w-3.5 h-2.5 bg-yellow-400/30 border border-yellow-400/20 rounded-xs"></div>
-                    <span className="text-[8px] font-extrabold tracking-widest text-[#F5C518]">Z</span>
-                  </div>
-                  <div className="flex flex-col justify-end text-right">
-                    <span className="text-[5px] font-black text-neutral-450 tracking-wider">ONE CARD</span>
-                  </div>
-                  <div className="absolute bottom-1 left-2 w-4 h-0.5 bg-yellow-500/40 rounded-full"></div>
-                </div>
-              </div>
-            </div>
-
             {/* MY ACCOUNT SECTION */}
             <div className="space-y-2.5 pt-1" id="my-account-section">
               <h3 className="font-extrabold text-[16px] text-brand-charcoal tracking-tight text-left">
@@ -1577,6 +1784,32 @@ export default function App() {
                     <span className="text-[13.5px] font-extrabold text-neutral-800 font-sans">Notifications</span>
                   </div>
                   <span className="text-gray-400 font-bold text-base select-none">›</span>
+                </div>
+
+                {/* Tactile Haptics Toggle Switch Item */}
+                <div 
+                  onClick={handleToggleHaptic}
+                  className="flex items-center justify-between p-3.5 hover:bg-gray-50/50 cursor-pointer transition-all active:px-4 text-left"
+                  id="account-btn-haptic-feedback"
+                >
+                  <div className="flex items-center gap-3 text-brand-charcoal">
+                    <span className="text-lg select-none">📳</span>
+                    <div className="flex flex-col text-left">
+                      <span className="text-[13.5px] font-extrabold text-neutral-800 font-sans">Tactile Haptics</span>
+                      <span className="text-[10px] text-gray-400 font-medium">Vibrate on actions & button taps</span>
+                    </div>
+                  </div>
+                  <div 
+                    className={`w-11 h-6 rounded-full transition-colors duration-300 relative ${
+                      isHapticEnabled ? 'bg-brand-green' : 'bg-gray-200'
+                    }`}
+                  >
+                    <div 
+                      className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform duration-300 shadow-sm ${
+                        isHapticEnabled ? 'translate-x-[20px]' : 'translate-x-0'
+                      }`}
+                    />
+                  </div>
                 </div>
 
                 {/* Language Item */}
@@ -1616,22 +1849,6 @@ export default function App() {
                     <span className="text-[13.5px] font-extrabold text-neutral-800 font-sans">Terms & Conditions</span>
                   </div>
                   <span className="text-gray-400 font-bold text-base select-none">›</span>
-                </div>
-
-                {/* Zippi Component Library Showcase */}
-                <div 
-                  onClick={() => setActiveAccountSubModal('zippi_library')}
-                  className="flex items-center justify-between p-3.5 hover:bg-amber-50/50 cursor-pointer transition-all active:px-4 text-left"
-                  id="account-btn-zippi-library"
-                >
-                  <div className="flex items-center gap-3 text-brand-charcoal animate-pulse">
-                    <span className="text-lg select-none">🎨</span>
-                    <div className="flex items-baseline gap-1.5 text-left">
-                      <span className="text-[13.5px] font-black text-[#1565C0] font-sans">Zippi UI Library</span>
-                      <span className="text-[9.5px] text-[#1565C0] font-black bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">12 UI Components</span>
-                    </div>
-                  </div>
-                  <span className="text-[#1565C0] font-bold text-base select-none">⌃</span>
                 </div>
 
                 {/* View App Intro / Screen animation */}
@@ -1826,6 +2043,14 @@ export default function App() {
                       onClearHistory={() => {
                         if (confirm('Are you sure you want to clear your Sri Lankan order history logs?')) {
                           setOrders([]);
+                        }
+                      }}
+                      onCancelOrder={(orderId) => {
+                        setOrders((prev) => 
+                          prev.map((o) => o.id === orderId ? { ...o, status: 'cancelled' } : o)
+                        );
+                        if (activeTrackOrder && activeTrackOrder.id === orderId) {
+                          setActiveTrackOrder((prev) => prev ? { ...prev, status: 'cancelled' as const } : null);
                         }
                       }}
                     />
@@ -2206,77 +2431,6 @@ export default function App() {
               </div>
             )}
 
-            {activeAccountSubModal === 'card_apply' && (
-              <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 text-left">
-                <div className="bg-white rounded-2xl w-full max-w-[390px] overflow-hidden shadow-2xl flex flex-col p-5 space-y-4 animate-scale-up">
-                  <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                    <span className="font-extrabold text-[#1a1a1a] text-sm uppercase tracking-wide flex items-center gap-1.5 font-sans text-left">
-                      <span>💳</span> Apply for Zippi One Card
-                    </span>
-                    <button onClick={() => setActiveAccountSubModal(null)} className="p-1 text-gray-400 hover:text-black cursor-pointer font-sans">
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-
-                  <div className="space-y-4 text-xs font-sans text-left">
-                    <div className="bg-slate-900 text-white rounded-xl p-4 border border-zinc-800 flex justify-between items-center text-left font-sans">
-                      <div>
-                        <h4 className="font-black text-[14px] font-sans">Zippi One Premium Credit Card</h4>
-                        <p className="text-[10px] text-zinc-400 mt-1 leading-normal font-sans font-medium">Up to 20% grocery cashback rewards, welcome bonuses, and zero interest rate.</p>
-                      </div>
-                      <span className="text-2xl select-none shrink-0">⚡</span>
-                    </div>
-
-                    <form 
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        alert('Sending verification parameters to Colombo Credit Bureau... \n\n🎉 Instant Approval! Your Zippi One Card is APPROVED. Welcome bonus of LKR 5,000 has been added to your credits! Your card is ready.');
-                        setActiveAccountSubModal(null);
-                      }}
-                      className="space-y-3.5 font-sans"
-                    >
-                      <div className="text-left font-sans">
-                        <label className="text-[10px] text-gray-400 font-bold uppercase block mb-1">Sri Lankan NIC Number *</label>
-                        <input 
-                          type="text" 
-                          placeholder="e.g. 199512345678 or 951234567V" 
-                          required
-                          className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-brand-charcoal font-semibold text-[13px] uppercase focus:outline-none focus:ring-2 focus:ring-[#Fca311]"
-                        />
-                      </div>
-
-                      <div className="text-left font-sans">
-                        <label className="text-[10px] text-gray-400 font-bold uppercase block mb-1">Monthly Gross Revenue (LKR) *</label>
-                        <select
-                          required
-                          className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-[#1a1a1a] font-bold text-[13px] focus:outline-none focus:ring-2 focus:ring-[#Fca311]"
-                        >
-                          <option value="">Choose income bracket...</option>
-                          <option value="Under 100,000">🍳 Under LKR 100,000</option>
-                          <option value="100,000 - 250,000">🏢 LKR 100,000 - LKR 250,050</option>
-                          <option value="Above 250,000">💸 Above LKR 250,000</option>
-                        </select>
-                      </div>
-
-                      <div className="flex gap-2.5 items-start text-left font-sans">
-                        <input type="checkbox" required className="mt-0.5 rounded cursor-pointer size-4" />
-                        <p className="text-[10.5px] text-gray-500 font-semibold leading-normal font-sans">
-                          I consent to Zippi performing an automated credit scoring evaluation utilizing my transaction history variables.
-                        </p>
-                      </div>
-
-                      <button
-                        type="submit"
-                        className="w-full bg-[#1A1A1A] hover:bg-black text-white font-black text-xs py-3 rounded-xl uppercase tracking-wider transition-all shadow-sm active:scale-98 cursor-pointer select-none"
-                      >
-                        Submit Card Application
-                      </button>
-                    </form>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {activeAccountSubModal === 'zippi_one' && (
               <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 text-left">
                 <div className="bg-white rounded-2xl w-full max-w-[390px] overflow-hidden shadow-2xl flex flex-col p-5 space-y-4 animate-scale-up">
@@ -2351,6 +2505,7 @@ export default function App() {
             onRemoveOne={handleRemoveOne}
             onUpdateQty={handleUpdateQty}
             onRemoveItem={handleRemoveItem}
+            onUpdateUnit={handleUpdateUnit}
             onProceedToCheckout={() => {
               const finalDeliveryFee = cartSubtotal > 3000 ? 0 : 350;
               const computedDiscount = Math.round(cartSubtotal * 0.15);
@@ -2373,6 +2528,7 @@ export default function App() {
           onTabChange={(tab) => {
             setActiveTab(tab);
             setBrowsingCategory(null);
+            triggerHapticFeedback('light');
           }}
           cartCount={cartTotalQty}
         />
@@ -2402,17 +2558,10 @@ export default function App() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {products.filter(p => wishlist.includes(p.id)).map(p => (
+                  {PRODUCTS.filter(p => wishlist.includes(p.id)).map(p => (
                     <div key={p.id} className="p-3 bg-gray-50 rounded-xl border border-gray-150 flex justify-between items-center gap-2">
                       <div className="flex items-center gap-2.5">
-                        <ZippiProductImage 
-                          image={p.image} 
-                          name={p.name} 
-                          category={p.category}
-                          className="w-10 h-10 shrink-0"
-                          imageClassName="w-10 h-10 object-contain rounded-lg bg-white"
-                          fallbackSize="xs"
-                        />
+                        <img src={p.image} className="w-10 h-10 object-contain" alt={p.name} referrerPolicy="no-referrer" />
                         <div>
                           <h4 className="font-bold text-xs text-[#1A1A1A] line-clamp-1">{p.name}</h4>
                           <span className="text-[10px] text-gray-400">{p.unit} • LKR {p.price}</span>
@@ -2481,77 +2630,382 @@ export default function App() {
 
         {/* 3. COORDINATES DELIVERY SELECTOR ADDR MODALS */}
         {isAddressModalOpen && (
-          <div className="fixed inset-0 bg-[#1A1A1A]/70 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl w-full max-w-[390px] overflow-hidden shadow-2xl flex flex-col p-4 space-y-4 animate-scale-up">
-              <div className="flex justify-between items-center pb-2 border-b border-gray-150">
-                <span className="font-black text-xs text-brand-charcoal uppercase tracking-wider">🎯 Saved Delivery Coordinates</span>
-                <button onClick={() => setIsAddressModalOpen(false)} className="p-1 text-[#888888] hover:text-brand-charcoal">
-                  <X className="w-5 h-5" />
+          <div className="fixed inset-0 bg-[#1A1A1A]/75 backdrop-blur-xs flex items-center justify-center z-50 p-2 sm:p-4">
+            <div className="bg-white rounded-[32px] w-full max-w-[420px] max-h-[95vh] overflow-hidden shadow-2xl flex flex-col animate-scale-up text-[#1A1A1A] select-none" id="address-book-modal">
+              
+              {/* Header block with back icon */}
+              <div className="flex items-center justify-between border-b border-gray-100/80 px-5 py-4 shrink-0 bg-white">
+                <button 
+                  onClick={() => setIsAddressModalOpen(false)}
+                  className="p-1 -ml-1 text-gray-800 hover:text-black transition-colors cursor-pointer active:scale-95"
+                >
+                  <ArrowLeft className="w-[18px] h-[18px] stroke-[2.8]" />
                 </button>
+                <span className="font-extrabold text-[15px] text-[#1A1A1A] text-center flex-grow pr-7">
+                  Address Book
+                </span>
               </div>
 
-              {/* List current options */}
-              <div className="space-y-2">
-                {addresses.map((addr) => (
-                  <div
-                    key={addr.id}
-                    onClick={() => {
-                      setSelectedAddress(addr);
-                      setIsAddressModalOpen(false);
-                    }}
-                    className={`p-3 rounded-xl border cursor-pointer transition-all flex items-start gap-2 ${
-                      selectedAddress.id === addr.id 
-                        ? 'border-[#F5C518] bg-[#FFFBEA]' 
-                        : 'border-gray-200 bg-gray-50'
+              {/* Segmented controls block */}
+              <div className="px-5 pt-4 pb-2 shrink-0 bg-white">
+                <div className="bg-[#EDEDF0] p-1 rounded-2xl flex w-full">
+                  <button
+                    type="button"
+                    onClick={() => setAddressTab('address')}
+                    className={`flex-1 py-2.5 text-[12.5px] font-extrabold rounded-xl transition-all duration-150 ${
+                      addressTab === 'address'
+                        ? 'bg-white text-[#1A1A1A] shadow-xs'
+                        : 'text-gray-500 hover:text-gray-800'
                     }`}
                   >
-                    <span className="text-base mt-0.5">📍</span>
-                    <div className="text-xs">
-                      <span className="font-extrabold text-[#1A1A1A]">{addr.label}</span>
-                      <p className="text-gray-500 mt-0.5 leading-relaxed">{addr.details}</p>
-                    </div>
-                  </div>
-                ))}
+                    Address
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAddressTab('locker')}
+                    className={`flex-1 py-2.5 text-[12.5px] font-extrabold rounded-xl transition-all duration-150 ${
+                      addressTab === 'locker'
+                        ? 'bg-white text-[#1A1A1A] shadow-xs'
+                        : 'text-gray-500 hover:text-gray-800'
+                    }`}
+                  >
+                    Locker/ Pickup
+                  </button>
+                </div>
               </div>
 
-              {/* Form custom coordinate input */}
-              <form onSubmit={handleAddAddress} className="space-y-3 pt-2 border-t border-gray-150">
-                <span className="text-[10px] text-gray-400 font-bold uppercase block tracking-wider">Or add new coordinates:</span>
-                
-                <div className="space-y-2.5 text-xs">
-                  <div>
-                    <label className="text-[9px] text-[#888888] font-bold uppercase">Coordinates Label</label>
-                    <select
-                      value={newLabel}
-                      onChange={(e) => setNewLabel(e.target.value)}
-                      className="w-full bg-gray-50 border border-gray-200 p-2 rounded-lg font-bold text-brand-charcoal"
-                    >
-                      <option value="Home">Home 🏠</option>
-                      <option value="Office">Office 🏢</option>
-                      <option value="Gym">Gym/Wellness 👟</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-[9px] text-[#888888] font-bold uppercase">Street Address</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. 50, Galle Road, Colombo 03"
-                      value={newDetails}
-                      onChange={(e) => setNewDetails(e.target.value)}
-                      className="w-full bg-gray-50 border border-gray-200 p-2.5 rounded-lg text-brand-charcoal placeholder:text-gray-400 font-semibold text-[11px]"
-                    />
-                  </div>
+              {/* Search input bar block */}
+              <div className="px-5 py-2 shrink-0 bg-white">
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                    <Search className="w-4 h-4 text-[#A0AABF]" />
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="Search for your building, area..."
+                    value={addressSearch}
+                    onChange={(e) => setAddressSearch(e.target.value)}
+                    className="w-full bg-white border border-[#E5E7EB] hover:border-gray-300 focus:border-[#4B84F7] pl-10 pr-4 py-3 rounded-2xl text-[12.5px] font-semibold text-[#1A1A1A] placeholder-[#A3AED0] focus:outline-none focus:ring-1 focus:ring-[#4B84F7] transition-all"
+                  />
                 </div>
+              </div>
 
+              {/* Blue contextual action button row */}
+              <div className="px-5 py-2.5 shrink-0 bg-white">
+                {addressTab === 'address' ? (
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setEditingAddressId(null);
+                      setNewLabel('Home');
+                      setNewDetails('');
+                      const flowContainer = document.getElementById('address-scroll-container');
+                      if (flowContainer) {
+                        flowContainer.scrollTo({ top: flowContainer.scrollHeight, behavior: 'smooth' });
+                      }
+                    }}
+                    className="w-full flex items-center justify-between py-1 text-[#2264E2] hover:text-[#184EB0] font-black text-[13px] active:scale-[0.99] transition-transform text-left cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 flex items-center justify-center rounded-full border-2 border-[#2264E2] text-[#2264E2]">
+                        <Plus className="w-3 h-3 stroke-[3px]" />
+                      </div>
+                      <span>Add new address</span>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-[#2264E2]" />
+                  </button>
+                ) : (
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setCategoriesToast("Locker Service is launching soon in Colombo! Stay tuned.");
+                    }}
+                    className="w-full flex items-center justify-between py-1 text-[#2264E2] hover:text-[#184EB0] font-black text-[13px] active:scale-[0.99] transition-transform text-left cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 flex items-center justify-center rounded-full border-2 border-[#2264E2] text-[#2264E2]">
+                        <Plus className="w-3 h-3 stroke-[3px]" />
+                      </div>
+                      <span>Add new locker/pickup point</span>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-[#2264E2]" />
+                  </button>
+                )}
+              </div>
+
+              {/* Middle dynamic content viewport block */}
+              <div 
+                className="flex-grow overflow-y-auto px-5 py-2 space-y-4" 
+                id="address-scroll-container"
+                style={{ scrollbarWidth: 'thin' }}
+              >
+                {addressTab === 'address' ? (
+                  <div className="space-y-4 pt-1">
+                    {/* List filterable address cards */}
+                    <div className="space-y-3.5">
+                      {addresses
+                        .filter(addr => 
+                          addr.label.toLowerCase().includes(addressSearch.toLowerCase()) || 
+                          addr.details.toLowerCase().includes(addressSearch.toLowerCase())
+                        )
+                        .map((addr) => {
+                          const isSelected = selectedAddress.id === addr.id;
+                          let emoji = '🏠';
+                          if (addr.label.toLowerCase().includes('office')) {
+                            emoji = '💼';
+                          } else if (addr.label.toLowerCase().includes('gym') || addr.label.toLowerCase().includes('wellness')) {
+                            emoji = '👟';
+                          }
+
+                          return (
+                            <div
+                              key={addr.id}
+                              onClick={() => {
+                                setSelectedAddress(addr);
+                                setIsAddressModalOpen(false);
+                              }}
+                              className={`p-4 rounded-[24px] border-2 cursor-pointer transition-all duration-150 flex flex-col relative text-left ${
+                                isSelected 
+                                  ? 'border-[#2D79F6] bg-[#F1F6FF] ring-2 ring-[#2D79F6]/10' 
+                                  : 'border-gray-100 bg-[#F9FAFB] hover:border-gray-200'
+                              }`}
+                              id={`address-card-${addr.id}`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2.5">
+                                  {/* Emoji visual card */}
+                                  <div className="w-9 h-9 rounded-2xl bg-white border border-gray-150/50 flex items-center justify-center shrink-0 shadow-3xs">
+                                    <span className="text-[17px] filter drop-shadow-xs">{emoji}</span>
+                                  </div>
+                                  
+                                  {/* Label text */}
+                                  <span className="font-extrabold text-[14px] text-[#1A1A1A] truncate max-w-[140px]">
+                                    {addr.label.replace(' (Default)', '')}
+                                  </span>
+                                  
+                                  {/* Sky travel badge */}
+                                  <span className="bg-[#E0EBFF] text-[#1C58D9] font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0">
+                                    999+ km
+                                  </span>
+                                </div>
+
+                                {/* Share & more options meatballs row */}
+                                <div className="flex items-center gap-2 text-[#7A869A]" onClick={(e) => e.stopPropagation()}>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setAddressOptionsItem(addr);
+                                    }}
+                                    className="p-1 hover:text-[#2D79F6] active:scale-90 transition-transform cursor-pointer"
+                                  >
+                                    <Share2 className="w-4 h-4 text-[#A0AABF] hover:text-[#1A1A1A]" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setAddressOptionsItem(addr);
+                                    }}
+                                    className="p-1 hover:text-[#2D79F6] active:scale-90 transition-transform cursor-pointer"
+                                  >
+                                    <MoreVertical className="w-4 h-4 text-[#A0AABF] hover:text-[#1A1A1A]" />
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Physical Street address details */}
+                              <p className="text-[13px] font-bold text-[#1A1A1A] mt-3 leading-snug">
+                                {addr.details}
+                              </p>
+
+                              {/* Static profile contacts + green check */}
+                              <div className="flex items-center gap-1.5 mt-2.5 mb-0.5">
+                                <span className="text-[12px] font-semibold text-[#7A869A]">
+                                  Asjath Ahamed, +94 77 123 4567
+                                </span>
+                                <div className="w-4.5 h-4.5 rounded-full bg-[#10B981] flex items-center justify-center text-white shrink-0">
+                                  <Check className="w-2.5 h-2.5 stroke-[4.5px]" />
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+
+                    {/* Styled form footer block inside scrolls */}
+                    <div className="pt-5 pb-3 border-t border-gray-100 flex flex-col gap-3.5" id="address-form-viewport">
+                      <div className="flex items-center justify-between px-1">
+                        <span className="text-[10px] text-[#7A869A] font-black uppercase tracking-wider pl-1 font-mono">
+                          {editingAddressId ? 'EDIT ADDRESS DETAILS' : 'ADD NEW ADDRESS'}
+                        </span>
+                        {editingAddressId && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingAddressId(null);
+                              setNewLabel('Home');
+                              setNewDetails('');
+                            }}
+                            className="text-[10px] text-red-500 font-extrabold uppercase tracking-wide hover:underline cursor-pointer"
+                          >
+                            Cancel Edit
+                          </button>
+                        )}
+                      </div>
+                      
+                      <form onSubmit={handleAddAddress} className="space-y-4">
+                        {/* LABEL custom box */}
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] text-[#7A869A] font-black uppercase tracking-wide block pl-1">
+                            LABEL
+                          </label>
+                          <div className="relative">
+                            <select
+                              value={newLabel}
+                              onChange={(e) => setNewLabel(e.target.value)}
+                              className="w-full bg-[#F4F5F8] border border-transparent hover:bg-gray-100/80 focus:bg-white focus:border-[#4B84F7] py-3.5 px-4 pr-10 rounded-[18px] text-[13px] font-extrabold text-[#1A1A1A] outline-none appearance-none transition-all cursor-pointer shadow-3xs"
+                            >
+                              <option value="Home">🏠 Home</option>
+                              <option value="Office">🏢 Office</option>
+                              <option value="Gym/Wellness">👟 Gym/Wellness</option>
+                            </select>
+                            <span className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-500">
+                              <ChevronDown className="w-4 h-4 text-[#7A869A]" />
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* STREET ADDRESS custom box */}
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] text-[#7A869A] font-black uppercase tracking-wide block pl-1">
+                            STREET ADDRESS
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="e.g. 50, Galle Road, Colombo 03"
+                            value={newDetails}
+                            onChange={(e) => setNewDetails(e.target.value)}
+                            className="w-full bg-[#F4F5F8] border border-transparent hover:bg-gray-100/80 focus:bg-white focus:border-[#4B84F7] py-3.5 px-4 rounded-[18px] text-[13px] font-bold text-[#1A1A1A] placeholder-[#A3AED0] outline-none transition-all"
+                          />
+                        </div>
+
+                        {/* Grand Yellow Save & Select coordinates action */}
+                        <button
+                          type="submit"
+                          className="w-full bg-[#FCE000] hover:bg-[#EED400] active:scale-[0.98] text-[#1A1A1A] font-extrabold text-[13px] py-4 rounded-[22px] uppercase transition-all shadow-xs cursor-pointer tracking-wider mt-2"
+                        >
+                          {editingAddressId ? 'SAVE CHANGES' : 'SAVE & SELECT ADDRESS'}
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+                ) : (
+                  /* ── LOCKER / PICKUP STATE VIEW REPLICATION ── */
+                  <div className="flex-grow flex flex-col items-center justify-center text-center py-8 px-4 animate-fade-in" id="locker-view-state">
+                    {/* Centered square container holding representation of location box */}
+                    <div className="w-36 h-36 bg-[#F0F5FF] rounded-[36px] flex items-center justify-center relative p-6 mb-7 shadow-xs">
+                      <div className="relative scale-110">
+                        {/* Simulated box */}
+                        <span className="text-[52px] filter drop-shadow-sm leading-none block select-none">📦</span>
+                        {/* Pin placement annotation bubble */}
+                        <span className="absolute -top-2.5 right-0.5 text-[28px] animate-bounce select-none">📍</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4 max-w-[280px]">
+                      <h4 className="text-[15px] font-black text-[#1D212C] leading-snug">
+                        Get your order delivered to a locker or pickup point
+                      </h4>
+                      
+                      <div className="flex flex-col gap-2.5 pt-4 items-start text-left text-[12px] font-extrabold text-[#2264E2] pl-3">
+                        <div className="flex items-center gap-3">
+                          <span className="text-[16px] shrink-0">📦</span>
+                          <span>No minimum order size</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-[16px] shrink-0">🕒</span>
+                          <span>Your preferred time & location</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-[16px] shrink-0">🚚</span>
+                          <span>Free Delivery</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+            </div>
+          </div>
+        )}
+
+        {/* ADDRESS BOOK ITEM OPTIONS BOTTOM SHEET */}
+        {addressOptionsItem && (
+          <div 
+            className="fixed inset-0 bg-[#000000]/40 backdrop-blur-3xs flex items-end justify-center z-[100] p-0 animate-fade-in"
+            onClick={() => setAddressOptionsItem(null)}
+          >
+            <div 
+              className="bg-white rounded-t-[32px] w-full max-w-[420px] pb-8 pt-4.5 shadow-2xl flex flex-col animate-slide-up text-[#1A1A1A] select-none"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Central premium pull bar/handle pill */}
+              <div className="w-[44px] h-[5px] bg-[#EDEDF0] hover:bg-gray-300 rounded-full mx-auto mb-5 transition-colors shrink-0" />
+
+              {/* Action Rows */}
+              <div className="flex flex-col">
+                {/* Edit option row */}
                 <button
-                  type="submit"
-                  className="w-full bg-[#F5C518] hover:bg-brand-yellow-hover text-[#1A1A1A] font-extrabold text-xs py-2.5 rounded-xl uppercase transition-colors shadow-sm cursor-pointer"
+                  type="button"
+                  onClick={() => {
+                    setEditingAddressId(addressOptionsItem.id);
+                    setNewLabel(addressOptionsItem.label);
+                    setNewDetails(addressOptionsItem.details);
+                    setAddressOptionsItem(null); // Close bottom sheets
+                    
+                    // Automatically scroll smooth down to the editor block inside the list container
+                    setTimeout(() => {
+                      const flowContainer = document.getElementById('address-scroll-container');
+                      if (flowContainer) {
+                        flowContainer.scrollTo({ top: flowContainer.scrollHeight, behavior: 'smooth' });
+                      }
+                      
+                      const detailInput = document.getElementById('address-form-viewport');
+                      if (detailInput) {
+                        detailInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                      }
+                    }, 120);
+                  }}
+                  className="w-full flex items-center gap-[18px] px-6 py-4.5 hover:bg-[#F9FAFB] active:bg-gray-100/90 transition-all text-left cursor-pointer duration-100"
                 >
-                  Save & Choose
+                  <div className="w-[42px] h-[42px] rounded-full bg-[#F4F5F8] flex items-center justify-center text-[#1A1A1A] shrink-0">
+                    <Edit className="w-5 h-5 stroke-[2.5px]" />
+                  </div>
+                  <span className="text-[15.5px] font-extrabold text-[#1A1A1A]">Edit</span>
                 </button>
-              </form>
+
+                {/* Separation line spacer */}
+                <div className="h-[1px] bg-gray-100 mx-6" />
+
+                {/* Share option row */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (navigator.clipboard) {
+                      navigator.clipboard.writeText(addressOptionsItem.details);
+                    }
+                    setCategoriesToast("Address details copied successfully!");
+                    setAddressOptionsItem(null);
+                  }}
+                  className="w-full flex items-center gap-[18px] px-6 py-4.5 hover:bg-[#F9FAFB] active:bg-gray-100/90 transition-all text-left cursor-pointer duration-100"
+                >
+                  <div className="w-[42px] h-[42px] rounded-full bg-[#F4F5F8] flex items-center justify-center text-[#1A1A1A] shrink-0">
+                    <Share2 className="w-5 h-5 stroke-[2.5px]" />
+                  </div>
+                  <span className="text-[15.5px] font-extrabold text-[#1A1A1A]">Share</span>
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -2561,15 +3015,15 @@ export default function App() {
           <ProductDetailsModal
             product={activeDetailProduct}
             onClose={() => setActiveDetailProduct(null)}
-            cartQty={cart.find((i) => i.product.id === activeDetailProduct.id)?.quantity || 0}
-            onAddToCart={() => handleAddToCart(activeDetailProduct)}
-            onRemoveOne={() => handleRemoveOne(activeDetailProduct)}
+            cart={cart}
+            onAddToCart={(unit) => handleAddToCart(activeDetailProduct, unit)}
+            onRemoveOne={(unit) => handleRemoveOne(activeDetailProduct, unit)}
             addresses={addresses}
             selectedAddress={selectedAddress}
             onSelectAddress={setSelectedAddress}
             onOpenCart={() => setIsCartOpen(true)}
             onSelectProduct={setActiveDetailProduct}
-            products={products}
+            products={activeProducts}
           />
         )}
 

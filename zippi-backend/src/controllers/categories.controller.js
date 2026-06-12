@@ -1,86 +1,59 @@
-const db = require('../utils/dbHelper');
+const supabase = require('../config/supabase');
+const { ok, ApiError } = require('../utils/response');
 
-// Cache storage
-let categoriesCache = null;
-let cacheTime = 0;
-const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
-
-const getCategories = async (req, res, next) => {
-  try {
-    const now = Date.now();
-    
-    // Check cache
-    if (categoriesCache && (now - cacheTime < CACHE_TTL)) {
-      return res.status(200).json({
-        success: true,
-        data: categoriesCache,
-        message: 'Categories fetched (cached)'
-      });
-    }
-
-    const categories = await db.categories.findAll();
-    
-    // Update cache
-    categoriesCache = categories;
-    cacheTime = now;
-
-    return res.status(200).json({
-      success: true,
-      data: categories,
-      message: 'Categories fetched'
-    });
-  } catch (error) {
-    next(error);
-  }
+const mapBody = (b) => {
+  const m = {};
+  const map = {
+    name: 'name', slug: 'slug', icon: 'icon', imageUrl: 'image_url',
+    parentSlug: 'parent_slug', sortOrder: 'sort_order', isActive: 'is_active'
+  };
+  for (const [k, col] of Object.entries(map)) if (b[k] !== undefined) m[col] = b[k];
+  return m;
 };
 
-const getCategoryProducts = async (req, res, next) => {
+/** GET /api/categories — public; response: { success, data: [...] } (web-app contract) */
+exports.list = async (req, res, next) => {
   try {
-    const { slug } = req.params;
-    
-    // Parse query params
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const sort = req.query.sort || 'newest'; // newest, price_asc, price_desc
-    
-    const offset = (page - 1) * limit;
-
-    // Check if category slug exists
-    const category = await db.categories.findBySlug(slug);
-    if (!category && slug !== 'all') {
-      return res.status(404).json({
-        success: false,
-        message: 'Category not found',
-        error: 'NOT_FOUND'
-      });
-    }
-
-    const { products, total } = await db.products.findAll({
-      category: slug,
-      sort,
-      limit,
-      offset
-    });
-
-    return res.status(200).json({
-      success: true,
-      data: {
-        products,
-        pagination: {
-          total,
-          page,
-          limit,
-          pages: Math.ceil(total / limit)
-        }
-      },
-      message: 'Category products fetched'
-    });
-  } catch (error) {
-    next(error);
-  }
+    let q = supabase.from('categories').select('*').order('sort_order', { ascending: true }).order('name');
+    if (!(req.user?.role === 'admin' && req.query.includeInactive === 'true')) q = q.eq('is_active', true);
+    const { data, error } = await q;
+    if (error) throw new ApiError(error.message, 500, 'DB_ERROR');
+    return ok(res, data);
+  } catch (err) { next(err); }
 };
 
-module.exports = {
-  getCategories,
-  getCategoryProducts
+/** POST /api/admin/categories */
+exports.create = async (req, res, next) => {
+  try {
+    const body = mapBody(req.body);
+    if (!body.slug) body.slug = body.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const { data: category, error } = await supabase.from('categories').insert(body).select('*').single();
+    if (error) throw new ApiError(error.code === '23505' ? 'A category with this slug already exists' : error.message, error.code === '23505' ? 409 : 500, 'DB_ERROR');
+    return ok(res, { category }, 201);
+  } catch (err) { next(err); }
+};
+
+/** PATCH /api/admin/categories/:id */
+exports.update = async (req, res, next) => {
+  try {
+    const { data: category, error } = await supabase
+      .from('categories').update(mapBody(req.body)).eq('id', req.params.id).select('*').maybeSingle();
+    if (error) throw new ApiError(error.message, 500, 'DB_ERROR');
+    if (!category) throw new ApiError('Category not found', 404, 'NOT_FOUND');
+    return ok(res, { category });
+  } catch (err) { next(err); }
+};
+
+/** DELETE /api/admin/categories/:id — soft delete by default */
+exports.remove = async (req, res, next) => {
+  try {
+    if (req.query.hard === 'true') {
+      const { error } = await supabase.from('categories').delete().eq('id', req.params.id);
+      if (error) throw new ApiError(error.message, 500, 'DB_ERROR');
+    } else {
+      const { error } = await supabase.from('categories').update({ is_active: false }).eq('id', req.params.id);
+      if (error) throw new ApiError(error.message, 500, 'DB_ERROR');
+    }
+    return ok(res, { deleted: true });
+  } catch (err) { next(err); }
 };

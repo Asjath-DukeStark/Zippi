@@ -20,7 +20,6 @@ import {
   Layers,
   Percent
 } from 'lucide-react';
-import { ZippiCategoryImage } from './ZippiProductImage';
 
 // ==========================================
 // 1. HEADER COMPONENT
@@ -404,11 +403,11 @@ export function ZippiCategoryCard({
 
       {/* Rounded content container */}
       <div className="w-full aspect-square bg-white rounded-xl flex items-center justify-center p-1 border border-gray-100 overflow-hidden mb-2">
-        <ZippiCategoryImage 
-          image={image} 
-          name={name} 
-          imageClassName="object-contain w-full h-full max-h-[64px] group-hover:scale-105 transition-transform" 
-          emojiClassName="text-3xl"
+        <img 
+          src={image} 
+          alt={name} 
+          referrerPolicy="no-referrer"
+          className="object-contain w-full h-full max-h-[64px] group-hover:scale-105 transition-transform" 
         />
       </div>
 

@@ -9,7 +9,6 @@ import { Product, CartItem } from '../types';
 import { PRODUCTS } from '../data';
 import ProductCard from './ProductCard';
 import FilterBottomSheet from './FilterBottomSheet';
-import { ZippiCategoryImage } from './ZippiProductImage';
 
 const DEALS_OPTIONS = [
   "Grand Lifestyle Sale",
@@ -38,8 +37,8 @@ const BRANDS_OPTIONS = [
 
 interface DealsViewProps {
   cart: CartItem[];
-  onAddToCart: (product: Product) => void;
-  onRemoveOne: (product: Product) => void;
+  onAddToCart: (product: Product, selectedUnit?: string) => void;
+  onRemoveOne: (product: Product, selectedUnit?: string) => void;
   onViewDetails: (product: Product) => void;
   wishlist: string[];
   onToggleWishlist: (productId: string) => void;
@@ -51,10 +50,10 @@ interface DealsViewProps {
 const LOCAL_BRANDS = ['All', 'Kotmale', 'Pelwatte', 'Araliya', 'Dilmah'];
 
 const SHORTCUT_CATEGORIES = [
-  { id: 'grocery', name: 'Grocery', emoji: '🍎', image: '/category-veggies.png', active: true, desc: 'Shop Deals' },
-  { id: 'mobiles', name: 'Mobiles', emoji: '📱', image: '/category-mobiles.png', active: false, desc: 'Coming Soon' },
-  { id: 'beauty', name: 'Beauty', emoji: '💅', image: '/category-beauty.png', active: false, desc: 'Coming Soon' },
-  { id: 'womens', name: "Women's", emoji: '👗', image: '/category-womens.png', active: false, desc: 'Coming Soon' }
+  { id: 'grocery', name: 'Grocery', emoji: '🍎', image: 'https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=150&auto=format&fit=crop&q=80', active: true, desc: 'Shop Deals' },
+  { id: 'mobiles', name: 'Mobiles', emoji: '📱', image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=150&auto=format&fit=crop&q=80', active: false, desc: 'Coming Soon' },
+  { id: 'beauty', name: 'Beauty', emoji: '💅', image: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=150&auto=format&fit=crop&q=80', active: false, desc: 'Coming Soon' },
+  { id: 'womens', name: "Women's", emoji: '👗', image: 'https://images.unsplash.com/photo-1485968579580-b6d095142e6e?w=150&auto=format&fit=crop&q=80', active: false, desc: 'Coming Soon' }
 ];
 
 export default function DealsView({
@@ -98,8 +97,8 @@ export default function DealsView({
 
   // Derive products on sale (i.e. those with discountPercent or onSale indicator)
   const dealsProductsRaw = useMemo(() => {
-    const allProducts = products || PRODUCTS;
-    return allProducts.filter(p => p.discountPercent && p.discountPercent > 0);
+    const list = products || PRODUCTS;
+    return list.filter(p => p.discountPercent && p.discountPercent > 0);
   }, [products]);
 
   // Filter and Sort execution
@@ -298,12 +297,11 @@ export default function DealsView({
 
             {/* Right Portion: Cool decorative elements/product images */}
             <div className="absolute right-2 top-2 bottom-2 w-[40%] flex items-center justify-end overflow-hidden select-none pointer-events-none opacity-90">
-              <ZippiCategoryImage 
-                image="/category-veggies.png" 
-                name="fresh veggies" 
-                id="veggies"
-                imageClassName="w-[90%] h-full object-cover rounded-xl shadow-md rotate-2 scale-105"
-                emojiClassName="text-3xl"
+              <img 
+                src="https://images.unsplash.com/photo-1610812381419-7ad0776527c6?w=200&auto=format&fit=crop&q=80" 
+                alt="fresh veggies" 
+                className="w-[90%] h-full object-cover rounded-xl shadow-md rotate-2 scale-105"
+                referrerPolicy="no-referrer"
               />
             </div>
           </div>
@@ -333,12 +331,11 @@ export default function DealsView({
 
             {/* Right side representation details */}
             <div className="w-[30%] h-14 flex items-center justify-center p-1 bg-white/70 backdrop-blur-xs rounded-xl shadow-xs border border-amber-250">
-              <ZippiCategoryImage 
-                image="/category-dairy.png" 
-                name="Pelwatte milk"
-                id="dairy"
-                imageClassName="max-h-12 max-w-full object-contain"
-                emojiClassName="text-2xl"
+              <img 
+                src="https://images.unsplash.com/photo-1516448620398-c5f44bf9f441?w=120&auto=format&fit=crop&q=80" 
+                alt="Pelwatte milk"
+                className="max-h-12 max-w-full object-contain"
+                referrerPolicy="no-referrer"
               />
             </div>
           </div>
@@ -358,7 +355,7 @@ export default function DealsView({
                 key={sc.id}
                 onClick={() => {
                   if (sc.active) {
-                    setBrowsingCategory('grocery'); // navigate to grocery
+                    setBrowsingCategory('veggies'); // navigate to grocery
                   } else {
                     triggerToast(`📦 ${sc.name} deals are coming soon! Stay tuned.`);
                   }
@@ -378,13 +375,12 @@ export default function DealsView({
                 )}
 
                 {/* Main image representing category */}
-                <div className="w-full h-[60%] flex items-center justify-center overflow-hidden">
-                  <ZippiCategoryImage
-                    image={sc.image}
-                    name={sc.name}
-                    id={sc.id}
-                    imageClassName={`max-h-12 max-w-full object-contain rounded-lg ${sc.active ? '' : 'grayscale opacity-60'}`}
-                    emojiClassName="text-2xl"
+                <div className="w-full h-[60%] flex items-center justify-center">
+                  <img
+                    src={sc.image}
+                    alt={sc.name}
+                    referrerPolicy="no-referrer"
+                    className={`max-h-12 max-w-full object-contain rounded-lg ${sc.active ? '' : 'grayscale opacity-60'}`}
                   />
                 </div>
 
@@ -440,7 +436,7 @@ export default function DealsView({
             /* Main 2-column grid */
             <div className="grid grid-cols-2 gap-3" id="deals-catalog-grid">
               {filteredAndSortedDeals.map((product) => {
-                const qty = cart.find(i => i.product.id === product.id)?.quantity || 0;
+                const qty = cart.filter(i => i.product.id === product.id).reduce((sum, item) => sum + item.quantity, 0);
                 return (
                   <ProductCard
                     key={product.id}
