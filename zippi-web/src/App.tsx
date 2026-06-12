@@ -238,9 +238,7 @@ export default function App() {
               sortOrder: c.sortOrder,
               isActive: c.isActive
             }));
-            if (mapped.length > 0) {
-              setActiveCategories(mapped);
-            }
+            setActiveCategories(mapped);
           }
         }
 
@@ -268,9 +266,7 @@ export default function App() {
                 stock: v.stock !== null && v.stock !== undefined ? Number(v.stock) : undefined
               })) : undefined
             }));
-            if (mapped.length > 0) {
-              setActiveProducts(mapped);
-            }
+            setActiveProducts(mapped);
           }
         }
       } catch (err) {
