@@ -32,6 +32,7 @@ export default function Settings() {
         etaMinutes: Number(delivery.etaMinutes),
         serviceRadiusKm: Number(delivery.serviceRadiusKm)
       });
+      localStorage.setItem('zippi_currency', store.currency);
       setSaved('Settings saved successfully.');
     } catch (err: any) { setError(err.message); } finally { setBusy(false); }
   };

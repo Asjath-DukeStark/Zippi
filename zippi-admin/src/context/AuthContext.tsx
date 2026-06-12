@@ -18,10 +18,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!getToken()) { setLoading(false); return; }
-    api.get<{ user: User }>('/auth/me')
-      .then((d) => {
-        if (d.user.role !== 'admin') throw new Error('Not an admin');
-        setUser(d.user);
+    Promise.all([
+      api.get<{ user: User }>('/auth/me'),
+      api.get<{ store: { currency: string } }>('/settings').catch(() => null)
+    ])
+      .then(([authData, settingsData]) => {
+        if (authData.user.role !== 'admin') throw new Error('Not an admin');
+        setUser(authData.user);
+        if (settingsData?.store?.currency) {
+          localStorage.setItem('zippi_currency', settingsData.store.currency);
+        }
       })
       .catch(() => setToken(null))
       .finally(() => setLoading(false));
@@ -32,6 +38,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (d.user.role !== 'admin') throw new Error('This account does not have admin access');
     setToken(d.token);
     setUser(d.user);
+    try {
+      const settingsData = await api.get<{ store: { currency: string } }>('/settings');
+      if (settingsData?.store?.currency) {
+        localStorage.setItem('zippi_currency', settingsData.store.currency);
+      }
+    } catch {}
   };
 
   const logout = () => { setToken(null); setUser(null); };

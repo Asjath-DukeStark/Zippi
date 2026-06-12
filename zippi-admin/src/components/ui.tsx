@@ -89,8 +89,10 @@ export const ErrorBanner = ({ message }: { message: string }) => (
 );
 
 /* ---------- Currency ---------- */
-export const fmtMoney = (n: number | string | null | undefined, currency = 'AED') =>
-  `${currency} ${Number(n || 0).toFixed(2)}`;
+export const fmtMoney = (n: number | string | null | undefined, currency?: string) => {
+  const activeCurrency = currency || localStorage.getItem('zippi_currency') || 'AED';
+  return `${activeCurrency} ${Number(n || 0).toFixed(2)}`;
+};
 
 export const fmtDate = (iso?: string | null) =>
   iso ? new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '—';
