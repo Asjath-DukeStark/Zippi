@@ -1485,7 +1485,7 @@ export default function App() {
                                 <img 
                                   src={cat.imageUrl || 'https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=120&auto=format&fit=crop&q=80'} 
                                   alt={cat.name} 
-                                  className="w-full h-full object-contain max-h-[50px] transition-transform duration-300 hover:scale-110" 
+                                  className="w-full h-full object-contain transition-transform duration-300 hover:scale-110" 
                                   referrerPolicy="no-referrer"
                                 />
                               </div>
@@ -1543,7 +1543,7 @@ export default function App() {
                                           <img
                                             src={sub.imageUrl}
                                             alt={sub.name}
-                                            className="w-full h-full object-contain p-1"
+                                            className="w-full h-full object-cover"
                                             referrerPolicy="no-referrer"
                                           />
                                         ) : sub.icon === 'layers' ? (
