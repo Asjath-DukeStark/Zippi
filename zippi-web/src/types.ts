@@ -25,6 +25,7 @@ export interface Product {
   rating: number;
   reviewsCount: number;
   variants?: ProductVariant[];
+  isFlashDeal?: boolean;
 }
 
 export interface CartItem {

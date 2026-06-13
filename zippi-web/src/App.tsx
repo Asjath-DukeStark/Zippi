@@ -281,6 +281,7 @@ export default function App() {
               unit: p.unit || '',
               image: p.imageUrl || 'https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=500&auto=format&fit=crop&q=80',
               popular: !!p.popular,
+              isFlashDeal: !!p.isFlashDeal,
               stock: Number(p.stock || 0),
               rating: Number(p.rating || 5.0),
               reviewsCount: Number(p.reviewsCount || 0),
@@ -797,8 +798,16 @@ export default function App() {
     ? activeProducts.filter(p => p.popular).slice(0, 10)
     : TRENDING_IDS.map(id => activeProducts.find(p => p.id === id)).filter((p): p is Product => !!p);
 
-  const freshProductsList = activeProducts.filter(p => p.category === 'veggies' || p.category === 'fruits').length > 0
-    ? activeProducts.filter(p => p.category === 'veggies' || p.category === 'fruits').slice(0, 10)
+  const isFresh = (p: Product) => 
+    p.category === 'veggies' || 
+    p.category === 'fruits' || 
+    p.category.includes('fresh') || 
+    p.category.includes('produce') || 
+    p.category.includes('veg') || 
+    p.category.includes('fruit');
+
+  const freshProductsList = activeProducts.filter(isFresh).length > 0
+    ? activeProducts.filter(isFresh).slice(0, 10)
     : FRESH_IDS.map(id => activeProducts.find(p => p.id === id)).filter((p): p is Product => !!p);
 
   const flashProductsList = activeProducts.filter(p => p.isFlashDeal).length > 0
