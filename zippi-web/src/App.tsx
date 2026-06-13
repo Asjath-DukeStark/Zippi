@@ -1146,9 +1146,11 @@ export default function App() {
                     : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'
                 }`}
               >
-                <div className="w-7 h-7 bg-[#1A1A1A] rounded-full flex items-center justify-center mb-1 text-yellow-400 text-[11px] font-black pointer-events-none">
-                  Z
-                </div>
+                <img 
+                  src="/logo.jpg" 
+                  className="w-7 h-7 object-cover rounded-md mb-1 pointer-events-none" 
+                  alt="Z" 
+                />
                 <span className="text-[11.5px] font-bold tracking-tight">Zippi</span>
               </button>
 

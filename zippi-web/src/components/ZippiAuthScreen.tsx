@@ -307,13 +307,8 @@ export default function ZippiAuthScreen({ onAuthSuccess }: ZippiAuthScreenProps)
             {/* Top Graphic Banner Area */}
             <div className="pt-10 pb-6 px-6 bg-gradient-to-b from-brand-yellow-light/60 to-white flex flex-col items-center border-b border-gray-100 text-center select-none">
                 {/* Rounded mini badge logo */}
-                <div className="w-14 h-14 bg-brand-yellow rounded-2xl flex items-center justify-center shadow-md mb-3.5">
-                    <svg viewBox="0 0 64 64" className="w-[32px] h-[32px]">
-                        <line x1="8" y1="26" x2="18" y2="26" stroke="#1A1A1A" strokeWidth="4" strokeLinecap="round" />
-                        <line x1="6" y1="34" x2="15" y2="34" stroke="#1A1A1A" strokeWidth="4" strokeLinecap="round" />
-                        <path d="M 46 20 A 14 14 0 1 1 42 44 L 25 44 L 41 24 L 25 24" fill="none" stroke="#1A1A1A" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-                        <path d="M 32 29 L 37 34 L 32 39" fill="none" stroke="#1A1A1A" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
+                <div className="w-14 h-14 bg-brand-yellow rounded-2xl flex items-center justify-center shadow-md mb-3.5 overflow-hidden">
+                    <img src="/logo.jpg" className="w-full h-full object-cover" alt="Zippi Logo" />
                 </div>
 
                 <h2 className="text-xl font-black text-brand-charcoal tracking-tight font-sans uppercase">

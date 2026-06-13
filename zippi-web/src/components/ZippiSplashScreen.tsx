@@ -234,19 +234,9 @@ export default function ZippiSplashScreen({ onComplete }: ZippiSplashScreenProps
         {/* LOGO AND WORDMARK ROW */}
         <div className="flex items-center justify-center gap-4">
           
-          {/* STEP 1 — LOGO ICON (64x64px, #F5C518 square, 16px radius) */}
-          <div className="logo-box-anim">
-            <svg viewBox="0 0 64 64" className="w-[38px] h-[38px] select-none">
-              {/* Two speed streaks on the left with 3.5 stroke width */}
-              <line x1="8" y1="26" x2="18" y2="26" stroke="#1A1A1A" strokeWidth="3.5" strokeLinecap="round" />
-              <line x1="6" y1="34" x2="15" y2="34" stroke="#1A1A1A" strokeWidth="3.5" strokeLinecap="round" />
-              
-              {/* Circular arrow forming the Z */}
-              <path d="M 46 20 A 14 14 0 1 1 42 44 L 25 44 L 41 24 L 25 24" fill="none" stroke="#1A1A1A" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
-              
-              {/* Right-pointing chevron/arrow inside */}
-              <path d="M 32 29 L 37 34 L 32 39" fill="none" stroke="#1A1A1A" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+          {/* STEP 1 — LOGO ICON */}
+          <div className="logo-box-anim overflow-hidden">
+            <img src="/logo.jpg" className="w-full h-full object-cover" alt="Zippi Logo" />
           </div>
 
           {/* STEP 2 — "Zippi" WORDMARK with SVG clipPath Sri Lanka Flag decoration */}
