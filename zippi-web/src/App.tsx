@@ -156,7 +156,91 @@ const FLASH_IDS = [
   'fd_harpic'
 ];
 
+// Reusable hook for smooth horizontal scrolling container that pauses on interaction
+function useAutoScroll(isActive: boolean = true) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = ref.current;
+    if (!container || !isActive) return;
+
+    let isInteracting = false;
+    const scrollSpeed = 0.35; // Pixels per frame (adjust for scrolling speed)
+    let animationFrameId: number;
+    let resumeTimeoutId: any;
+
+    const handleInteractionStart = () => {
+      isInteracting = true;
+      clearTimeout(resumeTimeoutId);
+    };
+
+    const handleInteractionEnd = () => {
+      clearTimeout(resumeTimeoutId);
+      resumeTimeoutId = setTimeout(() => {
+        isInteracting = false;
+      }, 3000);
+    };
+
+    container.addEventListener('touchstart', handleInteractionStart, { passive: true });
+    container.addEventListener('touchend', handleInteractionEnd, { passive: true });
+    container.addEventListener('mousedown', handleInteractionStart);
+    container.addEventListener('mouseup', handleInteractionEnd);
+    container.addEventListener('mouseleave', handleInteractionEnd);
+    container.addEventListener('wheel', handleInteractionStart, { passive: true });
+
+    const handleScroll = () => {
+      if (isInteracting) {
+        clearTimeout(resumeTimeoutId);
+        resumeTimeoutId = setTimeout(() => {
+          isInteracting = false;
+        }, 3000);
+      }
+    };
+    container.addEventListener('scroll', handleScroll, { passive: true });
+
+    const scroll = () => {
+      if (!isInteracting && container) {
+        if (container.scrollWidth > container.clientWidth) {
+          container.scrollLeft += scrollSpeed;
+          
+          // Loop back to start if we reach the end
+          if (container.scrollLeft >= container.scrollWidth - container.clientWidth - 1) {
+            container.scrollTo({ left: 0, behavior: 'smooth' });
+            isInteracting = true;
+            clearTimeout(resumeTimeoutId);
+            resumeTimeoutId = setTimeout(() => {
+              isInteracting = false;
+            }, 1500); // Wait 1.5s for smooth scroll back to complete and settle
+          }
+        }
+      }
+      animationFrameId = requestAnimationFrame(scroll);
+    };
+
+    animationFrameId = requestAnimationFrame(scroll);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      clearTimeout(resumeTimeoutId);
+      if (container) {
+        container.removeEventListener('touchstart', handleInteractionStart);
+        container.removeEventListener('touchend', handleInteractionEnd);
+        container.removeEventListener('mousedown', handleInteractionStart);
+        container.removeEventListener('mouseup', handleInteractionEnd);
+        container.removeEventListener('mouseleave', handleInteractionEnd);
+        container.removeEventListener('wheel', handleInteractionStart);
+        container.removeEventListener('scroll', handleScroll);
+      }
+    };
+  }, [isActive]);
+
+  return ref;
+}
+
 export default function App() {
+  const trendingScrollRef = useAutoScroll();
+  const freshScrollRef = useAutoScroll();
+  const flashScrollRef = useAutoScroll();
   // Navigation 5 View Tabs: 'home' | 'categories' | 'deals' | 'account' | 'cart'
   const [activeTab, setActiveTab] = useState<'home' | 'categories' | 'deals' | 'account' | 'cart'>('home');
   const [showSplash, setShowSplash] = useState(true);
@@ -1314,19 +1398,9 @@ export default function App() {
                     </button>
                   </div>
 
-                  <div 
-                    className="marquee-container"
-                    onTouchStart={(e) => {
-                      const track = e.currentTarget.firstElementChild as HTMLElement;
-                      if (track) track.style.animationPlayState = 'paused';
-                    }}
-                    onTouchEnd={(e) => {
-                      const track = e.currentTarget.firstElementChild as HTMLElement;
-                      if (track) track.style.animationPlayState = 'running';
-                    }}
-                  >
+                  <div className="marquee-container" ref={trendingScrollRef}>
                     <div className="marquee-track-rtl-s1">
-                      {[...trendingProductsList, ...trendingProductsList].map((product, idx) => {
+                      {trendingProductsList.map((product, idx) => {
                         const qty = cart.filter(i => i.product.id === product.id).reduce((sum, item) => sum + item.quantity, 0);
                         return (
                           <div className="w-[140px] shrink-0" key={`${product.id}-trend1-${idx}`}>
@@ -1365,19 +1439,9 @@ export default function App() {
                     </button>
                   </div>
 
-                  <div 
-                    className="marquee-container"
-                    onTouchStart={(e) => {
-                      const track = e.currentTarget.firstElementChild as HTMLElement;
-                      if (track) track.style.animationPlayState = 'paused';
-                    }}
-                    onTouchEnd={(e) => {
-                      const track = e.currentTarget.firstElementChild as HTMLElement;
-                      if (track) track.style.animationPlayState = 'running';
-                    }}
-                  >
+                  <div className="marquee-container" ref={freshScrollRef}>
                     <div className="marquee-track-ltr">
-                      {[...freshProductsList, ...freshProductsList].map((product, idx) => {
+                      {freshProductsList.map((product, idx) => {
                         const qty = cart.filter(i => i.product.id === product.id).reduce((sum, item) => sum + item.quantity, 0);
                         return (
                           <div className="w-[140px] shrink-0" key={`${product.id}-fresh-${idx}`}>
@@ -1419,19 +1483,9 @@ export default function App() {
                     </button>
                   </div>
 
-                  <div 
-                    className="marquee-container"
-                    onTouchStart={(e) => {
-                      const track = e.currentTarget.firstElementChild as HTMLElement;
-                      if (track) track.style.animationPlayState = 'paused';
-                    }}
-                    onTouchEnd={(e) => {
-                      const track = e.currentTarget.firstElementChild as HTMLElement;
-                      if (track) track.style.animationPlayState = 'running';
-                    }}
-                  >
+                  <div className="marquee-container" ref={flashScrollRef}>
                     <div className="marquee-track-rtl-flash">
-                      {[...flashProductsList, ...flashProductsList].map((product, idx) => {
+                      {flashProductsList.map((product, idx) => {
                         const qty = cart.filter(i => i.product.id === product.id).reduce((sum, item) => sum + item.quantity, 0);
                         return (
                           <div className="w-[140px] shrink-0" key={`${product.id}-flash-${idx}`}>

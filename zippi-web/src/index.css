@@ -66,70 +66,32 @@ input, select, textarea {
   outline: none;
 }
 
-/* ═════════ INFINITE MARQUEE ANIMATIONS ═════════ */
+/* ═════════ HORIZONTAL SCROLLABLE CONTAINERS (SWIPEABLE) ═════════ */
 .marquee-container {
-  overflow: hidden;
+  overflow-x: auto;
   width: 100%;
   display: flex;
+  scrollbar-width: none !important;  /* Hide scrollbars on Firefox */
+  -ms-overflow-style: none !important;  /* Hide scrollbars on IE/Edge */
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch; /* Smooth momentum scrolling on iOS */
+  padding-left: 16px;
+  padding-right: 16px;
 }
 
-@keyframes marqueeLeft {
-  0% { transform: translate3d(0, 0, 0); }
-  100% { transform: translate3d(-50%, 0, 0); }
+.marquee-container::-webkit-scrollbar {
+  display: none !important;  /* Hide scrollbars on Chrome/Safari/Opera */
 }
 
-@keyframes marqueeRight {
-  0% { transform: translate3d(-50%, 0, 0); }
-  100% { transform: translate3d(0, 0, 0); }
-}
-
-.marquee-track-rtl-s1 {
-  display: flex;
-  gap: 12px;
-  width: max-content;
-  animation: marqueeLeft 42s linear infinite;
-  will-change: transform;
-}
-
-.marquee-track-rtl-s2 {
-  display: flex;
-  gap: 12px;
-  width: max-content;
-  animation: marqueeLeft 48s linear infinite;
-  will-change: transform;
-}
-
-.marquee-track-ltr {
-  display: flex;
-  gap: 12px;
-  width: max-content;
-  animation: marqueeRight 48s linear infinite;
-  will-change: transform;
-}
-
+.marquee-track-rtl-s1,
+.marquee-track-rtl-s2,
+.marquee-track-ltr,
 .marquee-track-rtl-flash {
   display: flex;
   gap: 12px;
-  width: max-content;
-  animation: marqueeLeft 35s linear infinite;
-  will-change: transform;
+  flex-shrink: 0;
 }
 
-/* Pause play-state states */
-.marquee-track-rtl-s1:hover,
-.marquee-track-rtl-s1:active,
-.marquee-track-rtl-s1:focus-within,
-.marquee-track-rtl-s2:hover,
-.marquee-track-rtl-s2:active,
-.marquee-track-rtl-s2:focus-within,
-.marquee-track-ltr:hover,
-.marquee-track-ltr:active,
-.marquee-track-ltr:focus-within,
-.marquee-track-rtl-flash:hover,
-.marquee-track-rtl-flash:active,
-.marquee-track-rtl-flash:focus-within {
-  animation-play-state: paused !important;
-}
 
 /* ═════════ HERO BANNER CAROUSEL TRANSITIONS ═════════ */
 .slide {
