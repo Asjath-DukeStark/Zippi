@@ -326,6 +326,15 @@ function useAutoScroll(isActive: boolean = true, dependencies: any[] = []) {
   return ref;
 }
 
+interface DBBanner {
+  id: string | number;
+  title: string;
+  imageUrl: string;
+  linkUrl?: string;
+  sortOrder: number;
+  isActive: boolean;
+}
+
 export default function App() {
   // Navigation 5 View Tabs: 'home' | 'categories' | 'deals' | 'account' | 'cart'
   const [activeTab, setActiveTab] = useState<'home' | 'categories' | 'deals' | 'account' | 'cart'>('home');
@@ -405,6 +414,8 @@ export default function App() {
     neLng: 81.95
   });
 
+  const [dynamicBanners, setDynamicBanners] = useState<DBBanner[]>([]);
+
   const [dealsOptions, setDealsOptions] = useState<string[]>([
     "Grand Lifestyle Sale",
     "Mega Deal 📣",
@@ -432,10 +443,11 @@ export default function App() {
   useEffect(() => {
     const loadDynamicData = async () => {
       try {
-        const [catRes, prodRes, settingsRes] = await Promise.all([
+        const [catRes, prodRes, settingsRes, bannersRes] = await Promise.all([
           fetch('/api/categories'),
           fetch('/api/products?limit=200'),
-          fetch('/api/settings').catch(() => null)
+          fetch('/api/settings').catch(() => null),
+          fetch('/api/banners').catch(() => null)
         ]);
 
         if (catRes.ok) {
@@ -495,6 +507,21 @@ export default function App() {
             if (delivery && delivery.boundary) {
               setServiceBoundary(delivery.boundary);
             }
+          }
+        }
+
+        if (bannersRes && bannersRes.ok) {
+          const bannersJson = await bannersRes.json();
+          if (bannersJson.success && Array.isArray(bannersJson.data)) {
+            const mappedBanners = bannersJson.data.map((b: any) => ({
+              id: b.id,
+              title: b.title,
+              imageUrl: b.image_url || b.imageUrl,
+              linkUrl: b.link_url || b.linkUrl,
+              sortOrder: Number(b.sort_order || b.sortOrder || 0),
+              isActive: b.is_active !== false && b.isActive !== false
+            }));
+            setDynamicBanners(mappedBanners);
           }
         }
       } catch (err) {
@@ -583,7 +610,8 @@ export default function App() {
     const container = scrollContainerRef.current;
     const slideWidth = container.clientWidth || 1;
     const nearestIndex = Math.round(container.scrollLeft / slideWidth);
-    const targetIndex = Math.max(0, Math.min(2, nearestIndex));
+    const maxIdx = dynamicBanners.length > 0 ? dynamicBanners.length - 1 : 2;
+    const targetIndex = Math.max(0, Math.min(maxIdx, nearestIndex));
     
     container.scrollTo({
       left: targetIndex * slideWidth,
@@ -606,7 +634,8 @@ export default function App() {
     const container = scrollContainerRef.current;
     const slideWidth = container.clientWidth || 1;
     const index = Math.round(container.scrollLeft / slideWidth);
-    const targetIndex = Math.max(0, Math.min(2, index));
+    const maxIdx = dynamicBanners.length > 0 ? dynamicBanners.length - 1 : 2;
+    const targetIndex = Math.max(0, Math.min(maxIdx, index));
 
     if (targetIndex !== currentSlideRef.current) {
       currentSlideRef.current = targetIndex;
@@ -721,10 +750,11 @@ export default function App() {
 
   // Auto carousel rotation with user interaction checking & smooth scrolling
   useEffect(() => {
+    const maxSlides = dynamicBanners.length > 0 ? dynamicBanners.length : 3;
     const timer = setInterval(() => {
       // If no interaction for 4.5 seconds, auto-scroll to the next slide
       if (!isHoveredRef.current && Date.now() - lastInteractionTime.current >= 4500) {
-        const next = (currentSlideRef.current + 1) % 3;
+        const next = (currentSlideRef.current + 1) % maxSlides;
         const container = scrollContainerRef.current;
         if (container) {
           const slideWidth = container.clientWidth;
@@ -738,7 +768,7 @@ export default function App() {
       }
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [dynamicBanners.length]);
 
   // Synchronize cart to localStorage on modification
   useEffect(() => {
@@ -1319,78 +1349,126 @@ export default function App() {
                       className="flex flex-nowrap gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-none select-none rounded-2xl"
                       style={{ touchAction: 'pan-y', scrollbarWidth: 'none' }}
                     >
-                      
-                      {/* Swipeable Slide 0 - Active Green Grocery Banner (Fully Compliant Spec) */}
-                      <div className="w-full shrink-0 bg-[#2E7D32] text-white p-4 rounded-xl flex justify-between items-center min-h-[145px] relative overflow-hidden select-none snap-center">
-                        {/* Abstract background styling */}
-                        <div className="absolute right-0 top-0 bottom-0 w-2/5 bg-white/5 rounded-l-full pointer-events-none transform translate-x-12 scale-110 z-0"></div>
-                        
-                        <div className="space-y-1.5 relative z-10 w-[60%] flex flex-col justify-center text-left">
-                          <span className="text-[9px] uppercase tracking-wider bg-white/25 border border-white/20 text-white font-extrabold px-1.5 py-0.5 rounded-sm w-fit">Promo code</span>
-                          <h3 className="text-base font-black tracking-tight uppercase leading-none">GROCERY SAVER WEEK</h3>
-                          
-                          {/* Cashback code chips */}
-                          <div className="space-y-1 pt-1">
-                            <div className="bg-white/10 text-[9.5px] font-bold px-1.5 py-0.5 rounded border border-white/10 whitespace-nowrap w-fit">
-                              10% cashback · Use code: <span className="text-yellow-300 font-extrabold font-mono">FRESH10</span>
+                      {dynamicBanners.length > 0 ? (
+                        dynamicBanners.map((banner, idx) => (
+                          <div 
+                            key={banner.id}
+                            onClick={() => {
+                              if (banner.linkUrl) {
+                                if (banner.linkUrl.includes('deals')) {
+                                  setActiveTab('deals');
+                                } else {
+                                  setActiveTab('deals');
+                                }
+                              }
+                            }}
+                            className="w-full shrink-0 rounded-xl flex justify-between items-center min-h-[145px] relative overflow-hidden text-left select-none snap-center cursor-pointer"
+                            style={{
+                              background: idx % 3 === 0 ? '#1565C0' : idx % 3 === 1 ? '#2E7D32' : '#FF6F00',
+                            }}
+                          >
+                            <div className="absolute right-0 top-0 bottom-0 w-2/5 bg-white/5 rounded-l-full pointer-events-none transform translate-x-12 scale-110 z-0"></div>
+                            
+                            <div className="space-y-1.5 relative z-10 w-[60%] flex flex-col justify-center text-left pl-4">
+                              <span className="text-[9px] uppercase tracking-wider bg-white/25 border border-white/20 text-white font-extrabold px-1.5 py-0.5 rounded-sm w-fit">
+                                ZIPPI EXCLUSIVE
+                              </span>
+                              <h3 className="text-base font-black tracking-tight leading-snug uppercase text-white line-clamp-2 pr-2">
+                                {banner.title}
+                              </h3>
+                              {banner.linkUrl && (
+                                <span className="text-[9.5px] font-extrabold text-yellow-350 underline">
+                                  Click to shop offer ➔
+                                </span>
+                              )}
                             </div>
-                            <div className="bg-white/10 text-[9.5px] font-bold px-1.5 py-0.5 rounded border border-white/10 whitespace-nowrap w-fit">
-                              15% cashback · Use code: <span className="text-yellow-300 font-extrabold font-mono">ZIPPI15</span>
+
+                            {/* Right Side: Circle badge or Banner Image */}
+                            <div className="relative w-[38%] h-28 pr-4 py-3 flex items-center justify-end z-10">
+                              <img 
+                                src={banner.imageUrl} 
+                                alt={banner.title} 
+                                className="w-full h-full object-cover rounded-xl shadow-md rotate-2 scale-105"
+                                referrerPolicy="no-referrer"
+                              />
                             </div>
                           </div>
-                        </div>
+                        ))
+                      ) : (
+                        <>
+                          {/* Swipeable Slide 0 - Active Green Grocery Banner (Fully Compliant Spec) */}
+                          <div className="w-full shrink-0 bg-[#2E7D32] text-white p-4 rounded-xl flex justify-between items-center min-h-[145px] relative overflow-hidden select-none snap-center">
+                            {/* Abstract background styling */}
+                            <div className="absolute right-0 top-0 bottom-0 w-2/5 bg-white/5 rounded-l-full pointer-events-none transform translate-x-12 scale-110 z-0"></div>
+                            
+                            <div className="space-y-1.5 relative z-10 w-[60%] flex flex-col justify-center text-left">
+                              <span className="text-[9px] uppercase tracking-wider bg-white/25 border border-white/20 text-white font-extrabold px-1.5 py-0.5 rounded-sm w-fit">Promo code</span>
+                              <h3 className="text-base font-black tracking-tight uppercase leading-none">GROCERY SAVER WEEK</h3>
+                              
+                              {/* Cashback code chips */}
+                              <div className="space-y-1 pt-1">
+                                <div className="bg-white/10 text-[9.5px] font-bold px-1.5 py-0.5 rounded border border-white/10 whitespace-nowrap w-fit">
+                                  10% cashback · Use code: <span className="text-yellow-300 font-extrabold font-mono">FRESH10</span>
+                                </div>
+                                <div className="bg-white/10 text-[9.5px] font-bold px-1.5 py-0.5 rounded border border-white/10 whitespace-nowrap w-fit">
+                                  15% cashback · Use code: <span className="text-yellow-300 font-extrabold font-mono">ZIPPI15</span>
+                                </div>
+                              </div>
+                            </div>
 
-                        {/* Right Side: Circle badge and grocery product mock items */}
-                        <div className="relative w-[38%] h-28 flex flex-col justify-between items-end z-10">
-                          {/* Yellow Up to 70% off circle badge */}
-                          <div className="bg-[#F5C518] text-[#1A1A1A] w-12 h-12 rounded-full flex flex-col justify-center items-center text-center shadow-md border border-yellow-250 transform rotate-12 mt-1">
-                            <span className="text-[7px] font-black uppercase leading-none">Up to</span>
-                            <span className="text-[11px] font-black leading-none">70% off</span>
+                            {/* Right Side: Circle badge and grocery product mock items */}
+                            <div className="relative w-[38%] h-28 flex flex-col justify-between items-end z-10">
+                              {/* Yellow Up to 70% off circle badge */}
+                              <div className="bg-[#F5C518] text-[#1A1A1A] w-12 h-12 rounded-full flex flex-col justify-center items-center text-center shadow-md border border-yellow-250 transform rotate-12 mt-1">
+                                <span className="text-[7px] font-black uppercase leading-none">Up to</span>
+                                <span className="text-[11px] font-black leading-none">70% off</span>
+                              </div>
+                              
+                              {/* Rice, detergent and crops */}
+                              <div className="absolute bottom-0 right-1 flex items-end gap-1 font-sans">
+                                <span className="text-3xl filter drop-shadow-sm select-none transform hover:scale-105 transition-all">🍚</span>
+                                <span className="text-3xl filter drop-shadow-sm select-none transform hover:scale-105 transition-all">🧼</span>
+                                <span className="text-2xl filter drop-shadow-sm select-none transform hover:scale-105 transition-all">🥕</span>
+                              </div>
+                            </div>
                           </div>
-                          
-                          {/* Rice, detergent and crops */}
-                          <div className="absolute bottom-0 right-1 flex items-end gap-1 font-sans">
-                            <span className="text-3xl filter drop-shadow-sm select-none transform hover:scale-105 transition-all">🍚</span>
-                            <span className="text-3xl filter drop-shadow-sm select-none transform hover:scale-105 transition-all">🧼</span>
-                            <span className="text-2xl filter drop-shadow-sm select-none transform hover:scale-105 transition-all">🥕</span>
+
+                          {/* Slide 1 - TVS King Express Delivery */}
+                          <div className="w-full shrink-0 bg-[#1565C0] text-white p-4 rounded-xl flex justify-between items-center min-h-[145px] relative overflow-hidden text-left select-none snap-center">
+                            <div className="space-y-1 relative z-10 w-[65%]">
+                              <span className="text-[9px] uppercase tracking-wider bg-yellow-400 text-brand-charcoal font-black px-1.5 py-0.5 rounded-sm">ZIPPI SPEED</span>
+                              <h3 className="text-base font-black tracking-tight leading-tight">COLOMBO FLAT DELIVERIES</h3>
+                              <p className="text-[10.5px] text-blue-100 font-medium leading-relaxed">
+                                LKR 0 shipping fees of fresh meats or veggies on orders above LKR 3,000.
+                              </p>
+                            </div>
+                            <div className="w-[30%] h-20 relative flex items-center justify-center text-5xl select-none">
+                              🛵
+                            </div>
                           </div>
-                        </div>
-                      </div>
 
-                      {/* Slide 1 - TVS King Express Delivery */}
-                      <div className="w-full shrink-0 bg-[#1565C0] text-white p-4 rounded-xl flex justify-between items-center min-h-[145px] relative overflow-hidden text-left select-none snap-center">
-                        <div className="space-y-1 relative z-10 w-[65%]">
-                          <span className="text-[9px] uppercase tracking-wider bg-yellow-400 text-brand-charcoal font-black px-1.5 py-0.5 rounded-sm">ZIPPI SPEED</span>
-                          <h3 className="text-base font-black tracking-tight leading-tight">COLOMBO FLAT DELIVERIES</h3>
-                          <p className="text-[10.5px] text-blue-100 font-medium leading-relaxed">
-                            LKR 0 shipping fees of fresh meats or veggies on orders above LKR 3,000.
-                          </p>
-                        </div>
-                        <div className="w-[30%] h-20 relative flex items-center justify-center text-5xl select-none">
-                          🛵
-                        </div>
-                      </div>
-
-                      {/* Slide 2 - Fresh Milk & Butter Combo specials */}
-                      <div className="w-full shrink-0 bg-[#FF6F00] text-white p-4 rounded-xl flex justify-between items-center min-h-[145px] relative overflow-hidden text-left select-none snap-center">
-                        <div className="space-y-1 relative z-10 w-[65%]">
-                          <span className="text-[9px] uppercase tracking-wider bg-white/20 text-white font-extrabold px-1.5 py-0.5 rounded-sm">KITCHEN DEALS</span>
-                          <h3 className="text-base font-black tracking-tight leading-tight">LOCAL DIARY ESSENTIALS</h3>
-                          <p className="text-[10.5px] text-amber-50 font-medium leading-relaxed">
-                            Get up to LKR 150 off on Kotmale Butter & Pelwatte fresh milk assemblies.
-                          </p>
-                        </div>
-                        <div className="w-[30%] h-20 relative flex items-center justify-center text-5xl select-none">
-                          🥛
-                        </div>
-                      </div>
+                          {/* Slide 2 - Fresh Milk & Butter Combo specials */}
+                          <div className="w-full shrink-0 bg-[#FF6F00] text-white p-4 rounded-xl flex justify-between items-center min-h-[145px] relative overflow-hidden text-left select-none snap-center">
+                            <div className="space-y-1 relative z-10 w-[65%]">
+                              <span className="text-[9px] uppercase tracking-wider bg-white/20 text-white font-extrabold px-1.5 py-0.5 rounded-sm">KITCHEN DEALS</span>
+                              <h3 className="text-base font-black tracking-tight leading-tight">LOCAL DIARY ESSENTIALS</h3>
+                              <p className="text-[10.5px] text-amber-50 font-medium leading-relaxed">
+                                Get up to LKR 150 off on Kotmale Butter & Pelwatte fresh milk assemblies.
+                              </p>
+                            </div>
+                            <div className="w-[30%] h-20 relative flex items-center justify-center text-5xl select-none">
+                              🥛
+                            </div>
+                          </div>
+                        </>
+                      )}
 
                     </div>
                   </div>
 
                   {/* Dot Indicators below banner */}
                   <div className="flex justify-center gap-1.5 mt-2.5">
-                    {[0, 1, 2].map((idx) => (
+                    {Array.from({ length: dynamicBanners.length > 0 ? dynamicBanners.length : 3 }).map((_, idx) => (
                       <button
                         key={idx}
                         onClick={() => goToSlide(idx)}
