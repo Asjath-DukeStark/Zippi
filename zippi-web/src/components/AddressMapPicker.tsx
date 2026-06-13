@@ -17,22 +17,36 @@ L.Icon.Default.mergeOptions({
 
 interface AddressMapPickerProps {
   mode: 'address' | 'locker';
+  boundary?: {
+    swLat: number;
+    swLng: number;
+    neLat: number;
+    neLng: number;
+  };
   onClose: () => void;
   onConfirm: (address: string, coords: { lat: number; lng: number }) => void;
 }
 
-// Colombo, Sri Lanka as default center
-const DEFAULT_CENTER: [number, number] = [6.9271, 79.8612];
-
-// Rough "service area" polygon for Colombo (simplified bounding box)
-const SERVICE_BOUNDS = L.latLngBounds(
-  L.latLng(6.7, 79.7),
-  L.latLng(7.1, 80.0)
-);
-
-export default function AddressMapPicker({ mode, onClose, onConfirm }: AddressMapPickerProps) {
+export default function AddressMapPicker({ mode, boundary, onClose, onConfirm }: AddressMapPickerProps) {
   const mapRef = useRef<L.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
+
+  // Dynamic bounds calculation (defaults to Akkaraipattu if not supplied)
+  const swLat = boundary?.swLat ?? 7.15;
+  const swLng = boundary?.swLng ?? 81.75;
+  const neLat = boundary?.neLat ?? 7.30;
+  const neLng = boundary?.neLng ?? 81.95;
+
+  const SERVICE_BOUNDS = L.latLngBounds(
+    L.latLng(swLat, swLng),
+    L.latLng(neLat, neLng)
+  );
+
+  const centerLat = (swLat + neLat) / 2;
+  const centerLng = (swLng + neLng) / 2;
+  const defaultCenter: [number, number] = [centerLat, centerLng];
+
+  const defaultAreaName = swLng > 81 ? 'Akkaraipattu' : 'Colombo';
 
   const [locationName, setLocationName] = useState<string>('Locating…');
   const [locationSub, setLocationSub] = useState<string>('');
@@ -41,7 +55,7 @@ export default function AddressMapPicker({ mode, onClose, onConfirm }: AddressMa
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [currentCenter, setCurrentCenter] = useState<[number, number]>(DEFAULT_CENTER);
+  const [currentCenter, setCurrentCenter] = useState<[number, number]>(defaultCenter);
   const [distanceKm, setDistanceKm] = useState<number | null>(null);
   const [userLatLng, setUserLatLng] = useState<L.LatLng | null>(null);
 
@@ -74,7 +88,7 @@ export default function AddressMapPicker({ mode, onClose, onConfirm }: AddressMa
     if (!mapContainerRef.current || mapRef.current) return;
 
     const map = L.map(mapContainerRef.current, {
-      center: DEFAULT_CENTER,
+      center: defaultCenter,
       zoom: 15,
       zoomControl: false,
       attributionControl: false,
@@ -104,7 +118,7 @@ export default function AddressMapPicker({ mode, onClose, onConfirm }: AddressMa
 
     map.on('moveend', onMoveEnd);
     // Initial reverse geocode
-    reverseGeocode(DEFAULT_CENTER[0], DEFAULT_CENTER[1]);
+    reverseGeocode(defaultCenter[0], defaultCenter[1]);
 
     return () => {
       map.off('moveend', onMoveEnd);
@@ -283,17 +297,17 @@ export default function AddressMapPicker({ mode, onClose, onConfirm }: AddressMa
               </div>
               <div>
                 <p className="font-extrabold text-[15px] text-[#1A1A1A]">Sorry, we're not here yet</p>
-                <p className="text-[12px] text-gray-500 mt-1">Try searching for a different location in Colombo</p>
+                <p className="text-[12px] text-gray-500 mt-1">Try searching for a different location in {defaultAreaName}</p>
               </div>
             </div>
             <button
               onClick={() => {
-                setSearchQuery('Colombo');
+                setSearchQuery(defaultAreaName);
                 handleSearch();
               }}
               className="w-full bg-[#2563EB] text-white font-extrabold text-[15px] py-4 rounded-[18px] hover:bg-blue-700 transition-colors cursor-pointer"
             >
-              Search for Colombo
+              Search for {defaultAreaName}
             </button>
           </div>
         ) : (

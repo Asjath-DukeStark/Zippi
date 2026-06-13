@@ -3,7 +3,18 @@ import { api } from '../lib/api';
 import { PageLoader, ErrorBanner } from '../components/ui';
 
 interface StoreSettings { name: string; currency: string; supportPhone: string; supportEmail: string; isOpen: boolean; }
-interface DeliverySettings { deliveryFee: number; freeDeliveryAbove: number; etaMinutes: number; serviceRadiusKm: number; }
+interface DeliverySettings {
+  deliveryFee: number;
+  freeDeliveryAbove: number;
+  etaMinutes: number;
+  serviceRadiusKm: number;
+  boundary?: {
+    swLat: number;
+    swLng: number;
+    neLat: number;
+    neLng: number;
+  };
+}
 interface FilterSettings { deals: string[]; brands: string[]; }
 
 export default function Settings() {
@@ -38,7 +49,13 @@ export default function Settings() {
         deliveryFee: Number(delivery.deliveryFee),
         freeDeliveryAbove: Number(delivery.freeDeliveryAbove),
         etaMinutes: Number(delivery.etaMinutes),
-        serviceRadiusKm: Number(delivery.serviceRadiusKm)
+        serviceRadiusKm: Number(delivery.serviceRadiusKm),
+        boundary: {
+          swLat: Number(delivery.boundary?.swLat ?? 7.15),
+          swLng: Number(delivery.boundary?.swLng ?? 81.75),
+          neLat: Number(delivery.boundary?.neLat ?? 7.30),
+          neLng: Number(delivery.boundary?.neLng ?? 81.95)
+        }
       });
       const dealsArray = dealsStr.split(',').map(s => s.trim()).filter(Boolean);
       const brandsArray = brandsStr.split(',').map(s => s.trim()).filter(Boolean);
@@ -102,6 +119,82 @@ export default function Settings() {
             <div>
               <label className="label">Service radius (km)</label>
               <input className="input" type="number" min="1" value={delivery.serviceRadiusKm} onChange={(e) => setDelivery({ ...delivery, serviceRadiusKm: Number(e.target.value) })} />
+            </div>
+          </div>
+
+          <h3 className="font-bold text-sm pt-4 border-t border-slate-100">Service Area Boundary Coordinates</h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="label">South-West Latitude</label>
+              <input 
+                className="input" 
+                type="number" 
+                step="0.0001" 
+                value={delivery.boundary?.swLat ?? 7.15} 
+                onChange={(e) => setDelivery({ 
+                  ...delivery, 
+                  boundary: { 
+                    swLat: Number(e.target.value),
+                    swLng: delivery.boundary?.swLng ?? 81.75,
+                    neLat: delivery.boundary?.neLat ?? 7.30,
+                    neLng: delivery.boundary?.neLng ?? 81.95
+                  } 
+                })} 
+              />
+            </div>
+            <div>
+              <label className="label">South-West Longitude</label>
+              <input 
+                className="input" 
+                type="number" 
+                step="0.0001" 
+                value={delivery.boundary?.swLng ?? 81.75} 
+                onChange={(e) => setDelivery({ 
+                  ...delivery, 
+                  boundary: { 
+                    swLat: delivery.boundary?.swLat ?? 7.15,
+                    swLng: Number(e.target.value),
+                    neLat: delivery.boundary?.neLat ?? 7.30,
+                    neLng: delivery.boundary?.neLng ?? 81.95
+                  } 
+                })} 
+              />
+            </div>
+            <div>
+              <label className="label">North-East Latitude</label>
+              <input 
+                className="input" 
+                type="number" 
+                step="0.0001" 
+                value={delivery.boundary?.neLat ?? 7.30} 
+                onChange={(e) => setDelivery({ 
+                  ...delivery, 
+                  boundary: { 
+                    swLat: delivery.boundary?.swLat ?? 7.15,
+                    swLng: delivery.boundary?.swLng ?? 81.75,
+                    neLat: Number(e.target.value),
+                    neLng: delivery.boundary?.neLng ?? 81.95
+                  } 
+                })} 
+              />
+            </div>
+            <div>
+              <label className="label">North-East Longitude</label>
+              <input 
+                className="input" 
+                type="number" 
+                step="0.0001" 
+                value={delivery.boundary?.neLng ?? 81.95} 
+                onChange={(e) => setDelivery({ 
+                  ...delivery, 
+                  boundary: { 
+                    swLat: delivery.boundary?.swLat ?? 7.15,
+                    swLng: delivery.boundary?.swLng ?? 81.75,
+                    neLat: delivery.boundary?.neLat ?? 7.30,
+                    neLng: Number(e.target.value)
+                  } 
+                })} 
+              />
             </div>
           </div>
         </div>

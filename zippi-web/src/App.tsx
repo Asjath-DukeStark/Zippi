@@ -393,6 +393,18 @@ export default function App() {
     { id: 'car_rental_van', name: 'Vans & Buses', slug: 'car_rental_van', parentSlug: 'car_rental', icon: '🚐' }
   ]);
 
+  const [serviceBoundary, setServiceBoundary] = useState<{
+    swLat: number;
+    swLng: number;
+    neLat: number;
+    neLng: number;
+  }>({
+    swLat: 7.15,
+    swLng: 81.75,
+    neLat: 7.30,
+    neLng: 81.95
+  });
+
   const [dealsOptions, setDealsOptions] = useState<string[]>([
     "Grand Lifestyle Sale",
     "Mega Deal 📣",
@@ -474,10 +486,15 @@ export default function App() {
 
         if (settingsRes && settingsRes.ok) {
           const settingsJson = await settingsRes.json();
-          if (settingsJson.success && settingsJson.data && settingsJson.data.filters) {
-            const filters = settingsJson.data.filters;
-            if (Array.isArray(filters.deals)) setDealsOptions(filters.deals);
-            if (Array.isArray(filters.brands)) setBrandsOptions(filters.brands);
+          if (settingsJson.success && settingsJson.data) {
+            const { filters, delivery } = settingsJson.data;
+            if (filters) {
+              if (Array.isArray(filters.deals)) setDealsOptions(filters.deals);
+              if (Array.isArray(filters.brands)) setBrandsOptions(filters.brands);
+            }
+            if (delivery && delivery.boundary) {
+              setServiceBoundary(delivery.boundary);
+            }
           }
         }
       } catch (err) {
@@ -3300,6 +3317,7 @@ export default function App() {
         {showMapPicker && (
           <AddressMapPicker
             mode={addressTab === 'locker' ? 'locker' : 'address'}
+            boundary={serviceBoundary}
             onClose={() => setShowMapPicker(false)}
             onConfirm={(address, coords) => {
               triggerHapticFeedback('success');

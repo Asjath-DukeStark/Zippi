@@ -3,7 +3,18 @@ const { ok, ApiError } = require('../utils/response');
 
 const DEFAULTS = {
   store: { name: 'Zippi', currency: 'AED', supportPhone: '', supportEmail: '', isOpen: true },
-  delivery: { deliveryFee: 4.99, freeDeliveryAbove: 99, etaMinutes: 30, serviceRadiusKm: 15 },
+  delivery: { 
+    deliveryFee: 4.99, 
+    freeDeliveryAbove: 99, 
+    etaMinutes: 30, 
+    serviceRadiusKm: 15,
+    boundary: {
+      swLat: 7.15,
+      swLng: 81.75,
+      neLat: 7.30,
+      neLng: 81.95
+    }
+  },
   filters: {
     deals: ['Grand Lifestyle Sale', 'Mega Deal 📣', 'Eid Deal 🌙', 'Deal'],
     brands: ['Sebamed', 'Aveeno', 'Cool & Cool', 'HUGGIES', 'Pampers', 'BabyJoy', 'Mustela', 'Rubies', 'Generic', 'Sage Square', 'Kotmale', 'Pelwatte', 'Araliya', 'Dilmah', 'Harischandra']
