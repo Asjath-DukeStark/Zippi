@@ -73,7 +73,6 @@ input, select, textarea {
   display: flex;
   scrollbar-width: none !important;  /* Hide scrollbars on Firefox */
   -ms-overflow-style: none !important;  /* Hide scrollbars on IE/Edge */
-  scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch; /* Smooth momentum scrolling on iOS */
   padding-left: 16px;
   padding-right: 16px;

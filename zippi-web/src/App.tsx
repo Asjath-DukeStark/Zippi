@@ -270,14 +270,18 @@ function useAutoScroll(isActive: boolean = true) {
     
     container.addEventListener('wheel', handleWheel, { passive: true });
 
+    let currentScrollLeft = container.scrollLeft;
+
     const scroll = () => {
       if (!isInteracting && container) {
         if (container.scrollWidth > container.clientWidth) {
-          container.scrollLeft += scrollSpeed;
+          currentScrollLeft += scrollSpeed;
+          container.scrollLeft = Math.round(currentScrollLeft);
           
           // Loop back to start if we reach the end
           if (container.scrollLeft >= container.scrollWidth - container.clientWidth - 1) {
             container.scrollTo({ left: 0, behavior: 'smooth' });
+            currentScrollLeft = 0; // Reset float tracker
             isInteracting = true;
             clearTimeout(resumeTimeoutId);
             resumeTimeoutId = setTimeout(() => {
@@ -285,6 +289,9 @@ function useAutoScroll(isActive: boolean = true) {
             }, 1500); // Wait 1.5s for smooth scroll back to complete and settle
           }
         }
+      } else if (container) {
+        // Sync our float tracker with actual scrollLeft when the user manually swipes/scrolls
+        currentScrollLeft = container.scrollLeft;
       }
       animationFrameId = requestAnimationFrame(scroll);
     };
