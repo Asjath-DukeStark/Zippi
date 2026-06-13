@@ -211,6 +211,42 @@ const run = async () => {
   r = await req('POST', '/api/promotions/validate', { code: 'NOPE', subtotal: 50 });
   check('unknown promo invalid', r.json.data.valid === false);
 
+  // Advanced Promo validations
+  r = await req('POST', '/api/admin/promotions', { 
+    code: 'FRESHAKP', type: 'percent', value: 20, scope: 'category', targetCategorySlug: 'fruits' 
+  }, adminToken);
+  check('create category-specific promo', r.status === 201);
+
+  r = await req('POST', '/api/promotions/validate', {
+    code: 'FRESHAKP',
+    subtotal: 100,
+    items: [{ product_id: 'p1', price: 5.5, quantity: 2, category_slug: 'fruits' }]
+  });
+  check('validate category-specific promo', r.json.data.valid === true && r.json.data.discount === 2.2);
+
+  r = await req('POST', '/api/promotions/validate', {
+    code: 'FRESHAKP',
+    subtotal: 100,
+    items: [{ product_id: 'p2', price: 10.0, quantity: 1, category_slug: 'bakery' }]
+  });
+  check('validate category-specific promo unmatched items', r.json.data.valid === false);
+
+  r = await req('POST', '/api/admin/promotions', { 
+    code: 'FREEDEL', type: 'percent', value: 0, scope: 'delivery' 
+  }, adminToken);
+  check('create delivery promo', r.status === 201);
+
+  r = await req('POST', '/api/promotions/validate', { code: 'FREEDEL', subtotal: 50 });
+  check('validate delivery promo', r.json.data.valid === true && r.json.data.promotion.isFreeDelivery === true);
+
+  r = await req('POST', '/api/admin/promotions', { 
+    code: 'WELCOME50', type: 'percent', value: 50, firstOrderOnly: true 
+  }, adminToken);
+  check('create first order promo', r.status === 201);
+
+  r = await req('POST', '/api/promotions/validate', { code: 'WELCOME50', subtotal: 100, userId: '00000000-0000-4000-8000-999999999999' });
+  check('validate first order promo new user', r.json.data.valid === true);
+
   console.log('Order flow:');
   r = await req('POST', '/api/orders', {
     items: [{ productId: 'p1', quantity: 2 }],

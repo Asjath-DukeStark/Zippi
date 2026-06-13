@@ -16,30 +16,40 @@ interface DeliverySettings {
   };
 }
 interface FilterSettings { deals: string[]; brands: string[]; }
+interface FlashSaleSettings { isActive: boolean; endTime: string; }
 
 export default function Settings() {
   const [store, setStore] = useState<StoreSettings | null>(null);
   const [delivery, setDelivery] = useState<DeliverySettings | null>(null);
   const [dealsStr, setDealsStr] = useState('');
   const [brandsStr, setBrandsStr] = useState('');
+  const [flashSale, setFlashSale] = useState<FlashSaleSettings | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    api.get<{ store: StoreSettings; delivery: DeliverySettings; filters: FilterSettings }>('/settings')
+    api.get<{ store: StoreSettings; delivery: DeliverySettings; filters: FilterSettings; flashSale: FlashSaleSettings }>('/settings')
       .then((d) => { 
         setStore(d.store); 
         setDelivery(d.delivery); 
         setDealsStr(d.filters?.deals?.join(', ') || '');
         setBrandsStr(d.filters?.brands?.join(', ') || '');
+        setFlashSale(d.flashSale || { isActive: false, endTime: '' });
       })
       .catch((e) => setError(e.message));
   }, []);
 
+  const toDatetimeLocal = (isoStr: string) => {
+    if (!isoStr) return '';
+    const date = new Date(isoStr);
+    const tzoffset = date.getTimezoneOffset() * 60000;
+    return (new Date(date.getTime() - tzoffset)).toISOString().slice(0, 16);
+  };
+
   const save = async (e: FormEvent) => {
     e.preventDefault();
-    if (!store || !delivery) return;
+    if (!store || !delivery || !flashSale) return;
     setBusy(true);
     setError(null);
     setSaved(null);
@@ -60,13 +70,17 @@ export default function Settings() {
       const dealsArray = dealsStr.split(',').map(s => s.trim()).filter(Boolean);
       const brandsArray = brandsStr.split(',').map(s => s.trim()).filter(Boolean);
       await api.put('/admin/settings/filters', { deals: dealsArray, brands: brandsArray });
+      await api.put('/admin/settings/flashSale', {
+        isActive: flashSale.isActive,
+        endTime: flashSale.endTime
+      });
       
       localStorage.setItem('zippi_currency', store.currency);
       setSaved('Settings saved successfully.');
     } catch (err: any) { setError(err.message); } finally { setBusy(false); }
   };
 
-  if (!store || !delivery) return error ? <ErrorBanner message={error} /> : <PageLoader />;
+  if (!store || !delivery || !flashSale) return error ? <ErrorBanner message={error} /> : <PageLoader />;
 
   return (
     <div className="max-w-2xl space-y-5">
@@ -213,6 +227,30 @@ export default function Settings() {
               <p className="text-[11px] text-slate-400 mt-1">Available choices in the "Brand" filter sidebar.</p>
             </div>
           </div>
+        </div>
+
+        <div className="card space-y-4 p-5">
+          <h2 className="font-bold">⚡ Flash Sale settings</h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="label">Flash Sale End Date & Time</label>
+              <input 
+                className="input" 
+                type="datetime-local" 
+                value={toDatetimeLocal(flashSale.endTime)} 
+                onChange={(e) => setFlashSale({ ...flashSale, endTime: new Date(e.target.value).toISOString() })} 
+                required
+              />
+            </div>
+          </div>
+          <label className="flex items-center gap-2 text-sm font-semibold">
+            <input 
+              type="checkbox" 
+              checked={flashSale.isActive} 
+              onChange={(e) => setFlashSale({ ...flashSale, isActive: e.target.checked })} 
+            />
+            Show flash sale section & countdown timer on customer app
+          </label>
         </div>
 
         <button className="btn-primary" disabled={busy}>{busy ? 'Saving…' : 'Save settings'}</button>

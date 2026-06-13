@@ -93,7 +93,7 @@ export default function CheckoutSimulation({
   // Derive dynamic delivery fee from slot selection:
   // "Express" -> LKR 150
   // "Schedule Today/Tomorrow" -> FREE
-  const computedDeliveryFee = selectedSlot === 'express' ? 150 : 0;
+  const computedDeliveryFee = deliveryFee === 0 ? 0 : (selectedSlot === 'express' ? 150 : 0);
   const finalCalculatedTotal = Math.max(0, subtotal + computedDeliveryFee - discount);
 
   // Address saving logic

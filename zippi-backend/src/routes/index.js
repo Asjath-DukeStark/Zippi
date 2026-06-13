@@ -135,7 +135,7 @@ admin.get('/promotions', promotions.list);
 admin.post('/promotions', validate([
   body('code').isString().trim().isLength({ min: 3, max: 30 }).withMessage('Code must be 3-30 characters'),
   body('type').isIn(['percent', 'fixed']).withMessage('type must be percent or fixed'),
-  body('value').isFloat({ min: 0.01 }).withMessage('value must be greater than 0')
+  body('value').isFloat({ min: 0 }).withMessage('value must be greater than or equal to 0')
 ]), promotions.create);
 admin.patch('/promotions/:id', promotions.update);
 admin.delete('/promotions/:id', promotions.remove);

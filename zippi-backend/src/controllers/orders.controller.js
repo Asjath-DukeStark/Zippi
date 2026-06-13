@@ -51,24 +51,38 @@ exports.create = async (req, res, next) => {
     // Promo code (server-side validation & discount computation)
     let discount = 0;
     let promoCode = null;
+    let isFreeDelivery = false;
     if (req.body.promoCode) {
       const { evaluate } = require('./promotions.controller');
       const code = String(req.body.promoCode).trim().toUpperCase();
       const { data: promo } = await supabase.from('promotions').select('*').eq('code', code).maybeSingle();
-      const result = evaluate(promo, subtotal);
+      
+      const enrichedItems = orderItems.map(item => ({
+        ...item,
+        category_slug: byId[item.product_id]?.category_slug
+      }));
+
+      const result = await evaluate(promo, {
+        subtotal,
+        items: enrichedItems,
+        userId: req.user.id,
+        paymentMethod: paymentMethod
+      });
       if (!result.valid) throw new ApiError(result.reason, 422, 'INVALID_PROMO');
       discount = result.discount;
+      isFreeDelivery = !!result.isFreeDelivery;
       promoCode = code;
       await supabase.from('promotions').update({ used_count: (promo.used_count || 0) + 1 }).eq('id', promo.id);
     }
-    const total = Math.max(0, subtotal + deliveryFee - discount);
+    const finalDeliveryFee = isFreeDelivery ? 0 : deliveryFee;
+    const total = Math.max(0, subtotal + finalDeliveryFee - discount);
 
     const { data: order, error } = await supabase
       .from('orders')
       .insert({
         order_number: genOrderNumber(),
         user_id: req.user.id,
-        subtotal, delivery_fee: deliveryFee, discount, total,
+        subtotal, delivery_fee: finalDeliveryFee, discount, total,
         promo_code: promoCode,
         delivery_address: deliveryAddress,
         payment_method: paymentMethod,

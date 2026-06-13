@@ -18,6 +18,10 @@ const DEFAULTS = {
   filters: {
     deals: ['Grand Lifestyle Sale', 'Mega Deal 📣', 'Eid Deal 🌙', 'Deal'],
     brands: ['Sebamed', 'Aveeno', 'Cool & Cool', 'HUGGIES', 'Pampers', 'BabyJoy', 'Mustela', 'Rubies', 'Generic', 'Sage Square', 'Kotmale', 'Pelwatte', 'Araliya', 'Dilmah', 'Harischandra']
+  },
+  flashSale: {
+    isActive: true,
+    endTime: ''
   }
 };
 
@@ -27,10 +31,17 @@ exports.getPublic = async (req, res, next) => {
     const { data, error } = await supabase.from('settings').select('key, value');
     if (error) throw new ApiError(error.message, 500, 'DB_ERROR');
     const stored = Object.fromEntries((data || []).map((r) => [r.key, r.value]));
+    
+    const resolvedFlashSale = {
+      isActive: stored.flashSale?.isActive !== undefined ? stored.flashSale.isActive : DEFAULTS.flashSale.isActive,
+      endTime: stored.flashSale?.endTime || new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString()
+    };
+
     return ok(res, {
       store: { ...DEFAULTS.store, ...(stored.store || {}) },
       delivery: { ...DEFAULTS.delivery, ...(stored.delivery || {}) },
-      filters: { ...DEFAULTS.filters, ...(stored.filters || {}) }
+      filters: { ...DEFAULTS.filters, ...(stored.filters || {}) },
+      flashSale: resolvedFlashSale
     });
   } catch (err) { next(err); }
 };

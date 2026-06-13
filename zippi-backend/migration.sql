@@ -69,3 +69,13 @@ INSERT INTO public.settings (key, value) VALUES
   ('store', '{"name":"Zippi","currency":"AED","supportPhone":"","supportEmail":"","isOpen":true}'::jsonb),
   ('delivery', '{"deliveryFee":4.99,"freeDeliveryAbove":99,"etaMinutes":30,"serviceRadiusKm":15}'::jsonb)
 ON CONFLICT (key) DO NOTHING;
+
+-- Promotions table: advanced promo rules
+ALTER TABLE public.promotions ADD COLUMN IF NOT EXISTS scope TEXT DEFAULT 'order' CHECK (scope IN ('order', 'category', 'product', 'delivery', 'payment'));
+ALTER TABLE public.promotions ADD COLUMN IF NOT EXISTS target_category_slug TEXT REFERENCES public.categories(slug) ON UPDATE CASCADE;
+ALTER TABLE public.promotions ADD COLUMN IF NOT EXISTS target_product_id TEXT REFERENCES public.products(id) ON DELETE SET NULL;
+ALTER TABLE public.promotions ADD COLUMN IF NOT EXISTS target_payment_method TEXT CHECK (target_payment_method IN ('COD', 'CARD'));
+ALTER TABLE public.promotions ADD COLUMN IF NOT EXISTS first_order_only BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.promotions ADD COLUMN IF NOT EXISTS start_hour INTEGER CHECK (start_hour >= 0 AND start_hour <= 23);
+ALTER TABLE public.promotions ADD COLUMN IF NOT EXISTS end_hour INTEGER CHECK (end_hour >= 0 AND end_hour <= 23);
+

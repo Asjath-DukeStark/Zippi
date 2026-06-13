@@ -108,6 +108,13 @@ CREATE TABLE IF NOT EXISTS public.promotions (
   usage_limit INTEGER,
   used_count INTEGER DEFAULT 0,
   is_active BOOLEAN DEFAULT TRUE,
+  scope TEXT DEFAULT 'order' CHECK (scope IN ('order', 'category', 'product', 'delivery', 'payment')),
+  target_category_slug TEXT REFERENCES public.categories(slug) ON UPDATE CASCADE,
+  target_product_id TEXT REFERENCES public.products(id) ON DELETE SET NULL,
+  target_payment_method TEXT CHECK (target_payment_method IN ('COD', 'CARD')),
+  first_order_only BOOLEAN DEFAULT FALSE,
+  start_hour INTEGER CHECK (start_hour >= 0 AND start_hour <= 23),
+  end_hour INTEGER CHECK (end_hour >= 0 AND end_hour <= 23),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

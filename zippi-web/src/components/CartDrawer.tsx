@@ -30,10 +30,10 @@ interface CartDrawerProps {
   deliveryFee: number;
 }
 
-const AVAILABLE_PROMOS = [
-  { code: 'COLOMBOSUPER', desc: '15% Off Total Cart Value', type: 'percent', val: 0.15 },
-  { code: 'WELCOMEKITS', desc: 'Flat LKR 500 Off (Min spend LKR 2,000)', type: 'flat', val: 500, minPrice: 2000 },
-  { code: 'FASTZIPPI', desc: 'Free Express Delivery (Waives LKR 350)', type: 'freedel', val: 350 },
+const SUGGESTED_PROMOS = [
+  { code: 'WELCOME100', desc: 'Flat Rs. 100 Off (Min spend Rs. 500)' },
+  { code: 'FRESHAKP', desc: '20% Off Grocery (Min spend Rs. 1,000)' },
+  { code: 'FREEDEL', desc: 'Free Delivery' }
 ];
 
 export default function CartDrawer({
@@ -48,7 +48,7 @@ export default function CartDrawer({
   if (!isOpen) return null;
 
   const [couponCode, setCouponCode] = useState('');
-  const [activePromo, setActivePromo] = useState<typeof AVAILABLE_PROMOS[0] | null>(null);
+  const [activePromo, setActivePromo] = useState<{ code: string; desc: string; discount: number; isFreeDelivery: boolean } | null>(null);
   const [promoError, setPromoError] = useState('');
   const [courierNote, setCourierNote] = useState('');
 
@@ -64,53 +64,59 @@ export default function CartDrawer({
   const subtotal = cartItems.reduce((acc, item) => acc + (getItemPrice(item) * item.quantity), 0);
   
   // Calculate Promo Discount
-  let promoDiscount = 0;
-  let computedDeliveryFee = deliveryFee;
-
-  if (activePromo) {
-    if (activePromo.code === 'COLOMBOSUPER') {
-      promoDiscount = Math.round(subtotal * activePromo.val);
-    } else if (activePromo.code === 'WELCOMEKITS') {
-      if (subtotal >= (activePromo.minPrice || 0)) {
-        promoDiscount = activePromo.val;
-      } else {
-        // order went below min spend, deactivate
-        promoDiscount = 0;
-      }
-    } else if (activePromo.code === 'FASTZIPPI') {
-      computedDeliveryFee = 0;
-    }
-  }
+  let promoDiscount = activePromo ? activePromo.discount : 0;
+  let computedDeliveryFee = activePromo?.isFreeDelivery ? 0 : deliveryFee;
 
   // Waive delivery fee automatically if subtotal > LKR 3500
   const freeDeliveryThreshold = 3500;
   const isAutoFreeDelivery = subtotal >= freeDeliveryThreshold;
-  if (isAutoFreeDelivery && activePromo?.code !== 'FASTZIPPI') {
+  if (isAutoFreeDelivery) {
     computedDeliveryFee = 0;
   }
 
   const grandTotal = Math.max(0, subtotal + computedDeliveryFee - promoDiscount);
 
-  const handleApplyPromo = (code: string) => {
-    const matched = AVAILABLE_PROMOS.find(p => p.code.toUpperCase() === code.trim().toUpperCase());
-    if (!matched) {
-      triggerHapticFeedback('error');
-      setPromoError('Invalid coupon! Try WELCOMEKITS or COLOMBOSUPER.');
-      setActivePromo(null);
-      return;
-    }
-
-    if (matched.code === 'WELCOMEKITS' && subtotal < (matched.minPrice || 0)) {
-      triggerHapticFeedback('error');
-      setPromoError(`Minimum spend of LKR ${(matched.minPrice)?.toLocaleString()} required.`);
-      setActivePromo(null);
-      return;
-    }
-
-    triggerHapticFeedback('success');
-    setActivePromo(matched);
+  const handleApplyPromo = async (code: string) => {
+    if (!code.trim()) return;
     setPromoError('');
-    setCouponCode(matched.code);
+
+    try {
+      const response = await fetch('/api/promotions/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: code.trim(),
+          subtotal: subtotal,
+          items: cartItems.map(item => ({
+            product_id: item.product.id,
+            price: getItemPrice(item),
+            quantity: item.quantity,
+            category_slug: item.product.category
+          }))
+        })
+      });
+
+      const res = await response.json();
+      if (res.success && res.data.valid) {
+        triggerHapticFeedback('success');
+        setActivePromo({
+          code: res.data.promotion.code,
+          desc: res.data.promotion.isFreeDelivery ? 'Free Delivery Applied' : `Rs. ${res.data.discount} discount applied!`,
+          discount: Number(res.data.discount || 0),
+          isFreeDelivery: !!res.data.promotion.isFreeDelivery
+        });
+        setPromoError('');
+        setCouponCode(res.data.promotion.code);
+      } else {
+        triggerHapticFeedback('error');
+        setPromoError(res.data.reason || 'Invalid coupon code.');
+        setActivePromo(null);
+      }
+    } catch (err) {
+      triggerHapticFeedback('error');
+      setPromoError('Network error validating coupon.');
+      setActivePromo(null);
+    }
   };
 
   const removePromo = () => {
@@ -307,18 +313,15 @@ export default function CartDrawer({
                     <div className="pt-1.5">
                       <p className="text-[10px] text-brand-gray uppercase font-bold tracking-wider mb-1.5">Quick coupons for you:</p>
                       <div className="flex flex-wrap gap-2">
-                        {AVAILABLE_PROMOS.map(p => {
-                          const isEligible = p.code !== 'WELCOMEKITS' || subtotal >= (p.minPrice || 0);
+                        {SUGGESTED_PROMOS.map(p => {
                           return (
                             <button
                               key={p.code}
                               onClick={() => handleApplyPromo(p.code)}
-                              className={`text-[10.5px] border border-dashed text-brand-charcoal font-bold px-2 py-1 rounded-lg text-left hover:border-brand-yellow transition-all flex items-center justify-between gap-1.5 cursor-pointer bg-amber-50/20 ${
-                                isEligible ? 'border-brand-gray-mid' : 'border-gray-200 opacity-60'
-                              }`}
+                              className="text-[10.5px] border border-dashed border-brand-gray-mid text-brand-charcoal font-bold px-2 py-1 rounded-lg text-left hover:border-brand-yellow transition-all flex items-center justify-between gap-1.5 cursor-pointer bg-amber-50/20"
+                              title={p.desc}
                             >
                               <span>🏷️ <strong className="font-extrabold text-brand-blue">{p.code}</strong></span>
-                              <span className="text-[9px] text-brand-gray font-medium">({p.code === 'WELCOMEKITS' ? 'Flat 500' : '15% Off'})</span>
                             </button>
                           );
                         })}

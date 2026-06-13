@@ -440,6 +440,8 @@ export default function App() {
     "Harischandra"
   ]);
 
+  const [flashSaleConfig, setFlashSaleConfig] = useState<{ isActive: boolean; endTime: string } | null>(null);
+
   useEffect(() => {
     const loadDynamicData = async () => {
       try {
@@ -499,13 +501,16 @@ export default function App() {
         if (settingsRes && settingsRes.ok) {
           const settingsJson = await settingsRes.json();
           if (settingsJson.success && settingsJson.data) {
-            const { filters, delivery } = settingsJson.data;
+            const { filters, delivery, flashSale } = settingsJson.data;
             if (filters) {
               if (Array.isArray(filters.deals)) setDealsOptions(filters.deals);
               if (Array.isArray(filters.brands)) setBrandsOptions(filters.brands);
             }
             if (delivery && delivery.boundary) {
               setServiceBoundary(delivery.boundary);
+            }
+            if (flashSale) {
+              setFlashSaleConfig(flashSale);
             }
           }
         }
@@ -1665,49 +1670,53 @@ export default function App() {
                 <div className="h-2 bg-[#EEEEEE]" id="divider-under-fresh"></div>
 
                 {/* ── SECTION 4: "⚡ Flash Deals" ── */}
-                <div className="bg-white py-4 px-0 flex flex-col" id="section-marquee-flash">
-                  {/* Full-width yellow countdown timer bar  */}
-                  <div className="px-4 mb-3">
-                    <FlashDealsTimer />
-                  </div>
+                {flashSaleConfig && flashSaleConfig.isActive && (
+                  <>
+                    <div className="bg-white py-4 px-0 flex flex-col" id="section-marquee-flash">
+                      {/* Full-width yellow countdown timer bar  */}
+                      <div className="px-4 mb-3">
+                        <FlashDealsTimer endTimeStr={flashSaleConfig.endTime} />
+                      </div>
 
-                  <div className="flex items-center justify-between px-4 mb-3">
-                    <h3 className="text-[18px] font-extrabold text-[#1A1A1A] tracking-tight">Active Flash Discounts</h3>
-                    <button 
-                      onClick={() => {
-                        setActiveTab('deals');
-                      }}
-                      className="text-[13px] text-[#1565C0] hover:text-[#0D47A1] font-bold flex items-center gap-0.5 transition-colors cursor-pointer border-none bg-transparent"
-                    >
-                      View all <span className="text-[11px]">→</span>
-                    </button>
-                  </div>
+                      <div className="flex items-center justify-between px-4 mb-3">
+                        <h3 className="text-[18px] font-extrabold text-[#1A1A1A] tracking-tight">Active Flash Discounts</h3>
+                        <button 
+                          onClick={() => {
+                            setActiveTab('deals');
+                          }}
+                          className="text-[13px] text-[#1565C0] hover:text-[#0D47A1] font-bold flex items-center gap-0.5 transition-colors cursor-pointer border-none bg-transparent"
+                        >
+                          View all <span className="text-[11px]">→</span>
+                        </button>
+                      </div>
 
-                  <div className="marquee-container" ref={flashScrollRef}>
-                    <div className="marquee-track-rtl-flash">
-                      {flashProductsList.map((product, idx) => {
-                        const qty = cart.filter(i => i.product.id === product.id).reduce((sum, item) => sum + item.quantity, 0);
-                        return (
-                          <div className="w-[140px] shrink-0" key={`${product.id}-flash-${idx}`}>
-                            <ProductCard
-                              product={product}
-                              cartQty={qty}
-                              onAddToCart={() => handleAddToCart(product)}
-                              onRemoveOne={() => handleRemoveOne(product)}
-                              onViewDetails={() => setActiveDetailProduct(product)}
-                              isWishlisted={wishlist.includes(product.id)}
-                              onToggleWishlist={() => handleToggleWishlist(product.id)}
-                              isFlashDeal={true}
-                            />
-                          </div>
-                        );
-                      })}
+                      <div className="marquee-container" ref={flashScrollRef}>
+                        <div className="marquee-track-rtl-flash">
+                          {flashProductsList.map((product, idx) => {
+                            const qty = cart.filter(i => i.product.id === product.id).reduce((sum, item) => sum + item.quantity, 0);
+                            return (
+                              <div className="w-[140px] shrink-0" key={`${product.id}-flash-${idx}`}>
+                                <ProductCard
+                                  product={product}
+                                  cartQty={qty}
+                                  onAddToCart={() => handleAddToCart(product)}
+                                  onRemoveOne={() => handleRemoveOne(product)}
+                                  onViewDetails={() => setActiveDetailProduct(product)}
+                                  isWishlisted={wishlist.includes(product.id)}
+                                  onToggleWishlist={() => handleToggleWishlist(product.id)}
+                                  isFlashDeal={true}
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
 
-                {/* ── 8px GRAY PAGE DIVIDER ── */}
-                <div className="h-2 bg-[#EEEEEE]" id="divider-under-flash"></div>
+                    {/* ── 8px GRAY PAGE DIVIDER ── */}
+                    <div className="h-2 bg-[#EEEEEE]" id="divider-under-flash"></div>
+                  </>
+                )}
               </>
             )}
 

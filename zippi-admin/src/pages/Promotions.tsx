@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { Plus, Pencil, Trash2, BadgePercent, Ticket, Flame, Gift, TrendingUp, Sparkles } from 'lucide-react';
 import { api } from '../lib/api';
+import type { Category } from '../lib/types';
 import { Modal, ConfirmDialog, PageLoader, ActiveBadge, EmptyState, ErrorBanner, fmtDate } from '../components/ui';
 
 interface Promotion {
@@ -17,11 +18,21 @@ interface Promotion {
   usedCount: number;
   isActive: boolean;
   createdAt: string;
+
+  scope: 'order' | 'category' | 'product' | 'delivery' | 'payment';
+  targetCategorySlug?: string | null;
+  targetProductId?: string | null;
+  targetPaymentMethod?: 'COD' | 'CARD' | null;
+  firstOrderOnly: boolean;
+  startHour?: number | null;
+  endHour?: number | null;
 }
 
 const EMPTY: Partial<Promotion> = {
   code: '', description: '', type: 'percent', value: 10, minOrder: 0,
-  maxDiscount: undefined, expiresAt: undefined, usageLimit: undefined, isActive: true
+  maxDiscount: undefined, expiresAt: undefined, usageLimit: undefined, isActive: true,
+  scope: 'order', targetCategorySlug: '', targetProductId: '', targetPaymentMethod: null,
+  firstOrderOnly: false, startHour: undefined, endHour: undefined
 };
 
 const inDays = (n: number) => {
@@ -49,6 +60,7 @@ const TEMPLATES: { icon: any; title: string; desc: string; preset: Partial<Promo
 
 export default function Promotions() {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<Partial<Promotion> | null>(null);
@@ -64,6 +76,12 @@ export default function Promotions() {
       .finally(() => setLoading(false));
   };
   useEffect(load, []);
+
+  useEffect(() => {
+    api.get<Category[]>('/admin/categories?includeInactive=true')
+      .then(setCategories)
+      .catch(() => {});
+  }, []);
 
   const isLive = (p: Promotion) =>
     p.isActive &&
@@ -82,12 +100,22 @@ export default function Promotions() {
     setFormError(null);
     try {
       const body = {
-        code: editing.code, description: editing.description || null, type: editing.type,
-        value: Number(editing.value), minOrder: Number(editing.minOrder) || 0,
+        code: editing.code,
+        description: editing.description || null,
+        type: editing.type,
+        value: editing.scope === 'delivery' ? 0 : Number(editing.value),
+        minOrder: Number(editing.minOrder) || 0,
         maxDiscount: editing.maxDiscount ? Number(editing.maxDiscount) : null,
         expiresAt: editing.expiresAt ? new Date(editing.expiresAt).toISOString() : null,
         usageLimit: editing.usageLimit ? Number(editing.usageLimit) : null,
-        isActive: editing.isActive !== false
+        isActive: editing.isActive !== false,
+        scope: editing.scope || 'order',
+        firstOrderOnly: editing.firstOrderOnly === true,
+        targetCategorySlug: editing.scope === 'category' && editing.targetCategorySlug ? editing.targetCategorySlug : null,
+        targetProductId: editing.scope === 'product' && editing.targetProductId ? editing.targetProductId : null,
+        targetPaymentMethod: editing.scope === 'payment' && editing.targetPaymentMethod ? editing.targetPaymentMethod : null,
+        startHour: (editing.startHour !== undefined && editing.startHour !== null) ? Number(editing.startHour) : null,
+        endHour: (editing.endHour !== undefined && editing.endHour !== null) ? Number(editing.endHour) : null
       };
       if (editing.id) await api.patch(`/admin/promotions/${editing.id}`, body);
       else await api.post('/admin/promotions', body);
@@ -182,12 +210,32 @@ export default function Promotions() {
                         <div>
                           <p className="font-mono font-bold">{p.code}</p>
                           {p.description && <p className="max-w-48 truncate text-xs text-slate-400">{p.description}</p>}
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {p.firstOrderOnly && (
+                              <span className="inline-flex items-center gap-1 rounded bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold text-rose-700">First Order</span>
+                            )}
+                            {p.startHour !== null && p.endHour !== null && p.startHour !== undefined && p.endHour !== undefined && (
+                              <span className="inline-flex items-center gap-1 rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">{p.startHour}:00 - {p.endHour}:00</span>
+                            )}
+                            {p.scope === 'delivery' && (
+                              <span className="inline-flex items-center gap-1 rounded bg-sky-50 px-1.5 py-0.5 text-[10px] font-bold text-sky-700">Free Delivery</span>
+                            )}
+                            {p.scope === 'category' && p.targetCategorySlug && (
+                              <span className="inline-flex items-center gap-1 rounded bg-purple-50 px-1.5 py-0.5 text-[10px] font-bold text-purple-700">Category: {categories.find(c => c.slug === p.targetCategorySlug)?.name || p.targetCategorySlug}</span>
+                            )}
+                            {p.scope === 'product' && p.targetProductId && (
+                              <span className="inline-flex items-center gap-1 rounded bg-orange-50 px-1.5 py-0.5 text-[10px] font-bold text-orange-700">Product: {p.targetProductId}</span>
+                            )}
+                            {p.scope === 'payment' && p.targetPaymentMethod && (
+                              <span className="inline-flex items-center gap-1 rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-bold text-indigo-700">Payment: {p.targetPaymentMethod}</span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </td>
                     <td className="td font-semibold">
-                      {fmtValue(p)}
-                      {p.maxDiscount && <p className="text-xs font-normal text-slate-400">max {Number(p.maxDiscount).toFixed(2)}</p>}
+                      {p.scope === 'delivery' ? 'Free Delivery' : fmtValue(p)}
+                      {p.maxDiscount && p.scope !== 'delivery' && <p className="text-xs font-normal text-slate-400">max {Number(p.maxDiscount).toFixed(2)}</p>}
                     </td>
                     <td className="td text-slate-500">{Number(p.minOrder || 0) > 0 ? Number(p.minOrder).toFixed(2) : '-'}</td>
                     <td className="td">
@@ -214,7 +262,7 @@ export default function Promotions() {
         )}
       </div>
 
-      <Modal open={!!editing} onClose={() => setEditing(null)} title={editing?.id ? 'Edit promotion' : 'Add promotion'}>
+      <Modal open={!!editing} onClose={() => setEditing(null)} title={editing?.id ? 'Edit promotion' : 'Add promotion'} wide>
         {editing && (
           <form onSubmit={save} className="space-y-4">
             {formError && <ErrorBanner message={formError} />}
@@ -224,10 +272,22 @@ export default function Promotions() {
                 <input className="input font-mono uppercase" value={editing.code || ''} onChange={(e) => setEditing({ ...editing, code: e.target.value.toUpperCase() })} placeholder="WELCOME10" required minLength={3} disabled={!!editing.id} />
               </div>
               <div>
-                <label className="label">Type</label>
-                <select className="input" value={editing.type} onChange={(e) => setEditing({ ...editing, type: e.target.value as any })}>
-                  <option value="percent">Percentage (%)</option>
-                  <option value="fixed">Fixed amount</option>
+                <label className="label">Scope / Targeting Type</label>
+                <select className="input" value={editing.scope || 'order'} onChange={(e) => {
+                  const s = e.target.value as any;
+                  setEditing({
+                    ...editing,
+                    scope: s,
+                    targetCategorySlug: s === 'category' ? editing.targetCategorySlug : '',
+                    targetProductId: s === 'product' ? editing.targetProductId : '',
+                    targetPaymentMethod: s === 'payment' ? (editing.targetPaymentMethod || 'COD') : null
+                  });
+                }}>
+                  <option value="order">Entire Order</option>
+                  <option value="category">Category-wise</option>
+                  <option value="product">Product-wise</option>
+                  <option value="delivery">Delivery-fee Waiver</option>
+                  <option value="payment">Payment Method-wise</option>
                 </select>
               </div>
             </div>
@@ -235,16 +295,55 @@ export default function Promotions() {
               <label className="label">Description (optional)</label>
               <input className="input" value={editing.description || ''} onChange={(e) => setEditing({ ...editing, description: e.target.value })} placeholder="10% off your first order" />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="label">{editing.type === 'percent' ? 'Percent off' : 'Amount off'}</label>
-                <input className="input" type="number" step="0.01" min="0.01" value={editing.value ?? ''} onChange={(e) => setEditing({ ...editing, value: Number(e.target.value) })} required />
+
+            {editing.scope !== 'delivery' && (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="label">Type</label>
+                  <select className="input" value={editing.type} onChange={(e) => setEditing({ ...editing, type: e.target.value as any })}>
+                    <option value="percent">Percentage (%)</option>
+                    <option value="fixed">Fixed amount</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="label">{editing.type === 'percent' ? 'Percent off' : 'Amount off'}</label>
+                  <input className="input" type="number" step="0.01" min="0.01" value={editing.value ?? ''} onChange={(e) => setEditing({ ...editing, value: Number(e.target.value) })} required />
+                </div>
               </div>
+            )}
+
+            {/* Target Scope Fields */}
+            {editing.scope === 'category' && (
+              <div>
+                <label className="label">Target Category</label>
+                <select className="input" value={editing.targetCategorySlug || ''} onChange={(e) => setEditing({ ...editing, targetCategorySlug: e.target.value })} required>
+                  <option value="">Select category…</option>
+                  {categories.map((c) => <option key={c.id} value={c.slug}>{c.name}</option>)}
+                </select>
+              </div>
+            )}
+            {editing.scope === 'product' && (
+              <div>
+                <label className="label">Target Product ID</label>
+                <input className="input" placeholder="e.g. 550e8400-e29b-41d4-a716-446655440000" value={editing.targetProductId || ''} onChange={(e) => setEditing({ ...editing, targetProductId: e.target.value })} required />
+              </div>
+            )}
+            {editing.scope === 'payment' && (
+              <div>
+                <label className="label">Target Payment Method</label>
+                <select className="input" value={editing.targetPaymentMethod || 'COD'} onChange={(e) => setEditing({ ...editing, targetPaymentMethod: e.target.value as any })} required>
+                  <option value="COD">Cash on Delivery (COD)</option>
+                  <option value="CARD">Card Payment</option>
+                </select>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="label">Min order (0 = none)</label>
                 <input className="input" type="number" step="0.01" min="0" value={editing.minOrder ?? 0} onChange={(e) => setEditing({ ...editing, minOrder: Number(e.target.value) })} />
               </div>
-              {editing.type === 'percent' && (
+              {editing.scope !== 'delivery' && editing.type === 'percent' && (
                 <div>
                   <label className="label">Max discount (optional)</label>
                   <input className="input" type="number" step="0.01" min="0" value={editing.maxDiscount ?? ''} onChange={(e) => setEditing({ ...editing, maxDiscount: e.target.value ? Number(e.target.value) : undefined })} />
@@ -259,9 +358,28 @@ export default function Promotions() {
                 <input className="input" type="date" value={editing.expiresAt || ''} onChange={(e) => setEditing({ ...editing, expiresAt: e.target.value })} />
               </div>
             </div>
-            <label className="flex items-center gap-2 text-sm font-semibold">
-              <input type="checkbox" checked={editing.isActive !== false} onChange={(e) => setEditing({ ...editing, isActive: e.target.checked })} /> Active
-            </label>
+
+            {/* Daily Hour Range Fields */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="label">Start Hour (0-23, optional)</label>
+                <input className="input" type="number" min="0" max="23" placeholder="e.g. 14" value={editing.startHour ?? ''} onChange={(e) => setEditing({ ...editing, startHour: e.target.value === '' ? undefined : Number(e.target.value) })} />
+              </div>
+              <div>
+                <label className="label">End Hour (0-23, optional)</label>
+                <input className="input" type="number" min="0" max="23" placeholder="e.g. 18" value={editing.endHour ?? ''} onChange={(e) => setEditing({ ...editing, endHour: e.target.value === '' ? undefined : Number(e.target.value) })} />
+              </div>
+            </div>
+
+            <div className="flex gap-6 pb-2">
+              <label className="flex items-center gap-2 text-sm font-semibold select-none cursor-pointer">
+                <input type="checkbox" className="rounded border-slate-300 text-brand-600 focus:ring-brand-500 h-4 w-4" checked={editing.firstOrderOnly === true} onChange={(e) => setEditing({ ...editing, firstOrderOnly: e.target.checked })} /> First order only
+              </label>
+              <label className="flex items-center gap-2 text-sm font-semibold select-none cursor-pointer">
+                <input type="checkbox" className="rounded border-slate-300 text-brand-600 focus:ring-brand-500 h-4 w-4" checked={editing.isActive !== false} onChange={(e) => setEditing({ ...editing, isActive: e.target.checked })} /> Active
+              </label>
+            </div>
+
             <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
               <button type="button" className="btn-secondary" onClick={() => setEditing(null)}>Cancel</button>
               <button className="btn-primary" disabled={busy}>{busy ? 'Saving...' : 'Save promotion'}</button>

@@ -1,18 +1,29 @@
 import React, { useState, useEffect } from 'react';
 
-export default function FlashDealsTimer() {
-  const endTime = 8 * 60 * 60; // 8 hours in seconds
-  const [remaining, setRemaining] = useState(endTime);
+export default function FlashDealsTimer({ endTimeStr }: { endTimeStr: string }) {
+  const calculateRemaining = () => {
+    const diff = Math.floor((new Date(endTimeStr).getTime() - Date.now()) / 1000);
+    return diff > 0 ? diff : 0;
+  };
+
+  const [remaining, setRemaining] = useState(calculateRemaining);
+
+  useEffect(() => {
+    setRemaining(calculateRemaining());
+  }, [endTimeStr]);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setRemaining((prev) => {
-        if (prev <= 1) return endTime;
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [endTimeStr]);
 
   const hrs = Math.floor(remaining / 3600);
   const mins = Math.floor((remaining % 3600) / 60);
