@@ -135,13 +135,13 @@ export default function ProductListingView({
   // Map category code to exact data products
   const categoryProductsRaw = useMemo(() => {
     let items = products;
-    if (browsingCategory === 'veggies') {
+    if (browsingCategory === 'veggies' || browsingCategory === 'fresh-produce') {
       // Fresh Produce
-      items = products.filter(p => p.category === 'veggies' || p.category === 'fruits');
-    } else if (browsingCategory === 'dairy') {
-      items = products.filter(p => p.category === 'dairy');
-    } else if (browsingCategory === 'meats') {
-      items = products.filter(p => p.category === 'meats');
+      items = products.filter(p => p.category === 'veggies' || p.category === 'fresh-produce' || p.category === 'fruits-vegetables' || p.category === 'fruits');
+    } else if (browsingCategory === 'dairy' || browsingCategory === 'dairy-eggs') {
+      items = products.filter(p => p.category === 'dairy' || p.category === 'dairy-eggs');
+    } else if (browsingCategory === 'meats' || browsingCategory === 'meat') {
+      items = products.filter(p => p.category === 'meats' || p.category === 'meat' || p.category === 'chicken' || p.category === 'beef' || p.category === 'mutton');
     } else if (browsingCategory === 'bakery') {
       items = products.filter(p => p.category === 'bakery');
     } else if (browsingCategory === 'beverages') {

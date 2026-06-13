@@ -925,8 +925,13 @@ export default function App() {
 
   // Perform Dynamic filtering and sorting of products in accordance with chips states
   const filteredProducts = activeProducts.filter((p) => {
-    // 1. Category checklist
-    const matchesCategory = selectedCategory === 'all' || p.category === selectedCategory;
+    // 1. Category checklist (including parent-child subcategory checks)
+    const subSlugs = activeCategories.filter(c => c.parentSlug === selectedCategory).map(c => c.slug);
+    const matchesCategory = selectedCategory === 'all' || 
+                            p.category === selectedCategory || 
+                            (selectedCategory === 'veggies' && (p.category === 'fresh-produce' || p.category === 'fruits-vegetables' || p.category === 'fruits')) ||
+                            (selectedCategory === 'fresh-produce' && (p.category === 'veggies' || p.category === 'fruits-vegetables' || p.category === 'fruits')) ||
+                            subSlugs.includes(p.category);
     
     // 2. Text Search queries
     const matchesSearch = searchQuery === '' || 
@@ -1017,12 +1022,18 @@ export default function App() {
       setSelectedBrand('All');
       setActiveTab('home');
     } else if (tileId === 'fresh') {
-      // Direct user to Home tab with Fresh Produce filter focused
-      setSelectedCategory('veggies');
+      // Direct user to Home tab with Fresh Produce filter focused (reset other conflicts)
+      setSelectedCategory('fresh-produce');
+      setFastDeliveryFilter(false);
+      setDealsFilter(false);
+      setSelectedBrand('All');
       setActiveTab('home');
     } else if (tileId === 'express') {
-      // Toggle Express Delivery and view Home tab
+      // Toggle Express Delivery and view Home tab (reset other conflicts)
       setFastDeliveryFilter(true);
+      setSelectedCategory('all');
+      setDealsFilter(false);
+      setSelectedBrand('All');
       setActiveTab('home');
     } else if (tileId === 'deals') {
       // Redirect direct to Deals bottom tab!
@@ -1521,7 +1532,7 @@ export default function App() {
                     </h2>
                     <button 
                       onClick={() => {
-                        setSelectedCategory('veggies');
+                        setSelectedCategory('fresh-produce');
                       }}
                       className="text-[13px] text-[#1565C0] hover:text-[#0D47A1] font-bold flex items-center gap-0.5 transition-colors cursor-pointer border-none bg-transparent"
                     >
