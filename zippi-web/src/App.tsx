@@ -59,6 +59,7 @@ import { ZippiBottomNav } from './components/ZippiLibrary';
 import FilterBottomSheet from './components/FilterBottomSheet';
 import ZippiSplashScreen from './components/ZippiSplashScreen';
 import FlashDealsTimer from './components/FlashDealsTimer';
+import AddressMapPicker from './components/AddressMapPicker';
 
 const DEALS_OPTIONS = [
   "Grand Lifestyle Sale",
@@ -329,6 +330,7 @@ export default function App() {
   // Navigation 5 View Tabs: 'home' | 'categories' | 'deals' | 'account' | 'cart'
   const [activeTab, setActiveTab] = useState<'home' | 'categories' | 'deals' | 'account' | 'cart'>('home');
   const [showSplash, setShowSplash] = useState(true);
+  const [showMapPicker, setShowMapPicker] = useState(false);
 
   // Dynamic products and categories loaded from backend
   const [activeProducts, setActiveProducts] = useState<Product[]>(PRODUCTS);
@@ -2881,7 +2883,7 @@ export default function App() {
                         : 'text-gray-500 hover:text-gray-800'
                     }`}
                   >
-                    Locker/ Pickup
+                    Pickup Point
                   </button>
                 </div>
               </div>
@@ -2908,13 +2910,7 @@ export default function App() {
                   <button 
                     type="button"
                     onClick={() => {
-                      setEditingAddressId(null);
-                      setNewLabel('Home');
-                      setNewDetails('');
-                      const flowContainer = document.getElementById('address-scroll-container');
-                      if (flowContainer) {
-                        flowContainer.scrollTo({ top: flowContainer.scrollHeight, behavior: 'smooth' });
-                      }
+                      setShowMapPicker(true);
                     }}
                     className="w-full flex items-center justify-between py-1 text-[#2264E2] hover:text-[#184EB0] font-black text-[13px] active:scale-[0.99] transition-transform text-left cursor-pointer"
                   >
@@ -2930,7 +2926,7 @@ export default function App() {
                   <button 
                     type="button"
                     onClick={() => {
-                      setCategoriesToast("Locker Service is launching soon in Colombo! Stay tuned.");
+                      setShowMapPicker(true);
                     }}
                     className="w-full flex items-center justify-between py-1 text-[#2264E2] hover:text-[#184EB0] font-black text-[13px] active:scale-[0.99] transition-transform text-left cursor-pointer"
                   >
@@ -2938,7 +2934,7 @@ export default function App() {
                       <div className="w-5 h-5 flex items-center justify-center rounded-full border-2 border-[#2264E2] text-[#2264E2]">
                         <Plus className="w-3 h-3 stroke-[3px]" />
                       </div>
-                      <span>Add new locker/pickup point</span>
+                      <span>Add new pickup point</span>
                     </div>
                     <ChevronRight className="w-4 h-4 text-[#2264E2]" />
                   </button>
@@ -3126,7 +3122,7 @@ export default function App() {
 
                     <div className="space-y-4 max-w-[280px]">
                       <h4 className="text-[15px] font-black text-[#1D212C] leading-snug">
-                        Get your order delivered to a locker or pickup point
+                        Get your order delivered to a pickup point
                       </h4>
                       
                       <div className="flex flex-col gap-2.5 pt-4 items-start text-left text-[12px] font-extrabold text-[#2264E2] pl-3">
@@ -3299,6 +3295,33 @@ export default function App() {
             setSelectedBrand('All');
           }}
         />
+
+        {/* Address Map Picker Overlay */}
+        {showMapPicker && (
+          <AddressMapPicker
+            mode={addressTab === 'locker' ? 'locker' : 'address'}
+            onClose={() => setShowMapPicker(false)}
+            onConfirm={(address, coords) => {
+              triggerHapticFeedback('success');
+              const added: Address = {
+                id: 'addr-' + Date.now(),
+                label: addressTab === 'locker' ? 'Pickup Point' : 'Pinned Location',
+                details: address,
+                isDefault: false
+              };
+              setAddresses((prev) => [...prev, added]);
+              setSelectedAddress(added);
+              setNewDetails('');
+              setCategoriesToast(
+                addressTab === 'locker'
+                  ? "Pickup point added successfully!"
+                  : "Address added successfully!"
+              );
+              setShowMapPicker(false);
+              setIsAddressModalOpen(false);
+            }}
+          />
+        )}
 
       </div>
     </div>

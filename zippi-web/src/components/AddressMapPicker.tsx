@@ -169,14 +169,14 @@ export default function AddressMapPicker({ mode, onClose, onConfirm }: AddressMa
   return (
     <div className="fixed inset-0 z-[70] flex flex-col bg-white" style={{ maxWidth: 430, margin: '0 auto' }}>
       {/* ── Search Bar Overlay ── */}
-      <div className="absolute top-0 left-0 right-0 z-10 px-3 pt-4">
-        <div className="bg-white rounded-2xl shadow-lg flex items-center gap-2 px-3 py-3">
+      <div className="absolute top-4 left-4 right-4" style={{ zIndex: 9999 }}>
+        <div className="bg-white rounded-3xl shadow-lg flex items-center gap-2.5 px-4 py-3.5 border border-gray-100/50">
           <button
             onClick={onClose}
-            className="text-[#1A1A1A] p-1 hover:bg-gray-100 rounded-full"
+            className="text-[#1A1A1A] p-1.5 hover:bg-gray-100 rounded-full transition-colors active:scale-95 cursor-pointer flex items-center justify-center shrink-0"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 12H5M12 5l-7 7 7 7" />
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6"></polyline>
             </svg>
           </button>
           <input
@@ -185,31 +185,32 @@ export default function AddressMapPicker({ mode, onClose, onConfirm }: AddressMa
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleSearch()}
-            className="flex-1 text-[14px] text-[#1A1A1A] placeholder:text-gray-400 outline-none font-medium bg-transparent"
+            className="flex-1 text-[14px] text-[#1A1A1A] placeholder:text-gray-400 outline-none font-semibold bg-transparent"
           />
           <button
             onClick={handleSearch}
-            className="text-gray-400 hover:text-[#1A1A1A] p-1"
+            className="text-gray-500 hover:text-[#1A1A1A] p-1.5 transition-colors cursor-pointer flex items-center justify-center shrink-0"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
           </button>
         </div>
 
         {/* Search results dropdown */}
         {searchResults.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-xl mt-1 overflow-hidden border border-gray-100">
+          <div className="bg-white rounded-2xl shadow-xl mt-1.5 overflow-hidden border border-gray-100 max-h-[200px] overflow-y-auto">
             {searchResults.map((r, i) => (
               <button
                 key={i}
                 onClick={() => selectSearchResult(r)}
-                className="flex items-center gap-3 w-full px-4 py-3 hover:bg-gray-50 border-b border-gray-50 last:border-0 text-left"
+                className="flex items-center gap-3 w-full px-4 py-3 hover:bg-gray-50 border-b border-gray-50 last:border-0 text-left cursor-pointer transition-colors"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
                 </svg>
-                <span className="text-[12px] text-[#374151] font-medium line-clamp-1">
+                <span className="text-[12px] text-[#374151] font-bold line-clamp-1">
                   {r.display_name}
                 </span>
               </button>
@@ -219,90 +220,104 @@ export default function AddressMapPicker({ mode, onClose, onConfirm }: AddressMa
       </div>
 
       {/* ── Map ── */}
-      <div ref={mapContainerRef} className="flex-1 w-full" style={{ minHeight: 0 }} />
+      <div ref={mapContainerRef} className="flex-1 w-full" style={{ minHeight: 0, position: 'relative', zIndex: 1 }} />
 
       {/* ── Center Pin (fixed on screen center) ── */}
       <div
-        className="absolute left-1/2 z-10 pointer-events-none"
-        style={{ top: '50%', transform: 'translate(-50%, -100%)' }}
+        className="absolute left-1/2 pointer-events-none flex flex-col items-center"
+        style={{ top: '50%', transform: 'translate(-50%, -100%)', zIndex: 9999 }}
       >
-        {/* Tooltip */}
+        {/* Tooltip speech bubble */}
         {!isOutsideArea && !isFetchingName && (
-          <div className="mb-1 bg-white rounded-xl shadow-lg px-3 py-1.5 text-[12px] font-semibold text-[#1A1A1A] whitespace-nowrap text-center">
-            Your order will be delivered here
+          <div className="mb-2 flex flex-col items-center animate-fade-in filter drop-shadow-sm">
+            <div className="bg-white rounded-xl px-4 py-2.5 text-[12.5px] font-bold text-[#1A1A1A] whitespace-nowrap text-center shadow-md border border-gray-50">
+              Your order will be delivered here
+            </div>
+            {/* Triangle tail */}
+            <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-white -mt-[1px]"></div>
           </div>
         )}
         {isOutsideArea && (
-          <div className="mb-1 bg-white/90 border border-red-200 rounded-xl shadow-lg px-3 py-1.5 text-[12px] font-semibold text-red-500 whitespace-nowrap text-center">
-            Outside our service area :(
+          <div className="mb-2 flex flex-col items-center animate-fade-in filter drop-shadow-sm">
+            <div className="bg-white border border-red-100 rounded-xl px-4 py-2.5 text-[12.5px] font-bold text-red-500 whitespace-nowrap text-center shadow-md">
+              Outside our service area :(
+            </div>
+            <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-white -mt-[1px]"></div>
           </div>
         )}
 
-        {/* Pin SVG */}
-        <div className="flex flex-col items-center">
-          <div className="w-10 h-10 bg-[#1A1A1A] rounded-full flex items-center justify-center shadow-xl border-4 border-white">
-            <div className="w-3 h-3 rounded-full bg-white" />
-          </div>
-          {/* Pin tail */}
-          <div className="w-1 h-4 bg-[#1A1A1A] rounded-b-full" />
-          {/* Pulse ring */}
-          <div className="absolute top-0 w-10 h-10 rounded-full bg-blue-400/30 animate-ping" />
+        {/* Pin SVG (Black teardrop with white border and white circle inside) */}
+        <div className="relative flex items-center justify-center">
+          <svg width="42" height="42" viewBox="0 0 24 24" fill="none" className="filter drop-shadow-md">
+            <path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2Z" fill="#000000" stroke="#FFFFFF" strokeWidth="1.5" strokeLinejoin="round"/>
+            <circle cx="12" cy="9" r="3.5" fill="#FFFFFF"/>
+          </svg>
+          {/* Subtle pulse effect at the tip base */}
+          <div className="absolute bottom-0 w-3 h-3 rounded-full bg-black/20 animate-ping -z-10" />
         </div>
       </div>
 
       {/* ── Current Location button ── */}
-      <div className="absolute z-10" style={{ bottom: 'calc(180px + 16px)', left: '50%', transform: 'translateX(-50%)' }}>
+      <div className="absolute" style={{ bottom: '212px', left: '50%', transform: 'translateX(-50%)', zIndex: 9999 }}>
         <button
           onClick={goToCurrentLocation}
-          className="bg-white rounded-full shadow-lg px-5 py-2.5 flex items-center gap-2 text-[13px] font-bold text-[#1A1A1A] border border-gray-100 hover:shadow-xl transition-shadow"
+          className="bg-white rounded-full shadow-lg px-5 py-3 flex items-center gap-2 text-[13px] font-extrabold text-[#1A1A1A] border border-gray-100/30 hover:shadow-xl active:scale-95 transition-all cursor-pointer animate-fade-in"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+          {/* Solid tilted navigation arrow icon */}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-[#1A1A1A]">
+            <path d="M21 3L3 10.53v.98l6.84 2.65L12.48 21h.98L21 3z"/>
           </svg>
           Current location
         </button>
       </div>
 
-      {/* ── Bottom Panel ── */}
-      <div className="absolute bottom-0 left-0 right-0 z-10 bg-white rounded-t-3xl shadow-2xl px-5 pt-5 pb-6">
+      {/* ── Bottom Panel (Floating Card) ── */}
+      <div className="absolute bottom-5 left-4 right-4 bg-white rounded-[28px] shadow-2xl p-5 border border-gray-100" style={{ zIndex: 9999 }}>
         {isOutsideArea ? (
-          <>
-            <div className="flex items-start gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-[#1A1A1A] flex items-center justify-center shrink-0">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <div className="flex flex-col">
+            <div className="flex items-start gap-4 mb-4">
+              <div className="w-11 h-11 rounded-full bg-red-50 flex items-center justify-center shrink-0">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-red-500">
                   <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                 </svg>
               </div>
               <div>
-                <p className="font-black text-[15px] text-[#1A1A1A]">Sorry, we're not here yet</p>
-                <p className="text-[12px] text-gray-500 mt-0.5">Try searching for a different location</p>
+                <p className="font-extrabold text-[15px] text-[#1A1A1A]">Sorry, we're not here yet</p>
+                <p className="text-[12px] text-gray-500 mt-1">Try searching for a different location in Colombo</p>
               </div>
             </div>
             <button
-              onClick={handleSearch}
-              className="w-full bg-[#2563EB] text-white font-extrabold text-[15px] py-4 rounded-2xl hover:bg-blue-700 transition-colors"
+              onClick={() => {
+                setSearchQuery('Colombo');
+                handleSearch();
+              }}
+              className="w-full bg-[#2563EB] text-white font-extrabold text-[15px] py-4 rounded-[18px] hover:bg-blue-700 transition-colors cursor-pointer"
             >
-              Search for your location
+              Search for Colombo
             </button>
-          </>
+          </div>
         ) : (
-          <>
-            <div className="flex items-start gap-3 mb-2">
-              <div className="w-9 h-9 rounded-full bg-[#1A1A1A] flex items-center justify-center shrink-0 mt-0.5">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+          <div className="flex flex-col">
+            <div className="flex items-start gap-4 mb-4">
+              {/* Location Marker Icon (Black circle with white map-pin) */}
+              <div className="w-11 h-11 rounded-full bg-[#1A1A1A] flex items-center justify-center shrink-0 shadow-xs mt-0.5">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"></path>
+                  <circle cx="12" cy="10" r="3"></circle>
                 </svg>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-black text-[15px] text-[#1A1A1A] truncate">
+                <p className="font-extrabold text-[16px] text-[#1A1A1A] truncate leading-tight">
                   {isFetchingName ? 'Finding location…' : locationName}
                 </p>
                 {locationSub && (
-                  <p className="text-[12px] text-gray-500 truncate mt-0.5">{locationSub}</p>
+                  <p className="text-[13px] text-gray-500 truncate mt-1 leading-snug">
+                    {locationSub}
+                  </p>
                 )}
                 {distanceKm !== null && (
-                  <p className="text-[11px] text-[#F59E0B] font-semibold mt-1">
-                    📍 Pin is {distanceKm > 999 ? '999+' : distanceKm} km away from your current location
+                  <p className="text-[10px] text-[#F59E0B] font-extrabold mt-1.5 uppercase tracking-wider flex items-center gap-1">
+                    <span>📍</span> Pin is {distanceKm > 999 ? '999+' : distanceKm} km away
                   </p>
                 )}
               </div>
@@ -311,11 +326,11 @@ export default function AddressMapPicker({ mode, onClose, onConfirm }: AddressMa
             <button
               onClick={handleConfirm}
               disabled={isFetchingName || isOutsideArea}
-              className="w-full bg-[#2563EB] text-white font-extrabold text-[15px] py-4 rounded-2xl hover:bg-blue-700 transition-colors disabled:opacity-60 mt-3"
+              className="w-full bg-[#2563EB] text-white font-extrabold text-[15px] py-4 rounded-[18px] hover:bg-blue-700 active:scale-[0.98] transition-all disabled:opacity-60 disabled:pointer-events-none cursor-pointer tracking-wide"
             >
-              {mode === 'locker' ? 'Add locker/pickup details' : 'Add address details'}
+              {mode === 'locker' ? 'Add pickup details' : 'Add address details'}
             </button>
-          </>
+          </div>
         )}
       </div>
     </div>
