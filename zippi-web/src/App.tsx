@@ -326,15 +326,17 @@ function useAutoScroll(isActive: boolean = true, dependencies: any[] = []) {
 }
 
 export default function App() {
-  const trendingScrollRef = useAutoScroll(true, [activeProducts]);
-  const freshScrollRef = useAutoScroll(true, [activeProducts]);
-  const flashScrollRef = useAutoScroll(true, [activeProducts]);
   // Navigation 5 View Tabs: 'home' | 'categories' | 'deals' | 'account' | 'cart'
   const [activeTab, setActiveTab] = useState<'home' | 'categories' | 'deals' | 'account' | 'cart'>('home');
   const [showSplash, setShowSplash] = useState(true);
 
   // Dynamic products and categories loaded from backend
   const [activeProducts, setActiveProducts] = useState<Product[]>(PRODUCTS);
+
+  const trendingScrollRef = useAutoScroll(true, [activeProducts]);
+  const freshScrollRef = useAutoScroll(true, [activeProducts]);
+  const flashScrollRef = useAutoScroll(true, [activeProducts]);
+
   const [activeCategories, setActiveCategories] = useState<Category[]>(() => [
     // Parents
     { id: 'grocery', name: 'Grocery', slug: 'grocery', imageUrl: 'https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=120&auto=format&fit=crop&q=80', icon: '🛒' },
