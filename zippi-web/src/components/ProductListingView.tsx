@@ -87,7 +87,7 @@ export default function ProductListingView({
   brandsOptions = BRANDS_OPTIONS,
 }: ProductListingViewProps) {
   // Filters State
-  const [browseFastDelivery, setBrowseFastDelivery] = useState(true); // Default active (yellow)
+  const [browseFastDelivery, setBrowseFastDelivery] = useState(false); // Default inactive
   const [browseDealsOnly, setBrowseDealsOnly] = useState(false);
   const [browseBrand, setBrowseBrand] = useState('All');
   const [isBrandDropdownOpen, setIsBrandDropdownOpen] = useState(false);
@@ -167,10 +167,11 @@ export default function ProductListingView({
     } else if (browsingCategory === 'health') {
       items = products.filter(p => p.name.toLowerCase().includes('organic') || p.category === 'veggies');
     } else {
-      items = products.filter(p => p.category === browsingCategory);
+      const subSlugs = categories.filter(c => c.parentSlug === browsingCategory).map(c => c.slug || c.id);
+      items = products.filter(p => p.category === browsingCategory || subSlugs.includes(p.category));
     }
     return items;
-  }, [browsingCategory, products]);
+  }, [browsingCategory, products, categories]);
 
   // Apply filters and sorting
   const filteredAndSortedProducts = useMemo(() => {
