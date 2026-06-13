@@ -157,12 +157,20 @@ const FLASH_IDS = [
 ];
 
 // Reusable hook for smooth horizontal scrolling container that pauses on horizontal interaction
-function useAutoScroll(isActive: boolean = true) {
-  const ref = useRef<HTMLDivElement>(null);
+function useAutoScroll(isActive: boolean = true, dependencies: any[] = []) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const cleanupRef = useRef<(() => void) | null>(null);
 
-  useEffect(() => {
-    const container = ref.current;
-    if (!container || !isActive) return;
+  const ref = useCallback((node: HTMLDivElement | null) => {
+    // 1. Run cleanup if there was a previous node
+    if (cleanupRef.current) {
+      cleanupRef.current();
+      cleanupRef.current = null;
+    }
+
+    containerRef.current = node;
+
+    if (!node || !isActive) return;
 
     let isInteracting = false;
     const scrollSpeed = 0.35; // Pixels per frame (adjust for scrolling speed)
@@ -259,28 +267,28 @@ function useAutoScroll(isActive: boolean = true) {
       }
     };
 
-    container.addEventListener('touchstart', handleTouchStart, { passive: true });
-    container.addEventListener('touchmove', handleTouchMove, { passive: true });
-    container.addEventListener('touchend', handleTouchEnd, { passive: true });
+    node.addEventListener('touchstart', handleTouchStart, { passive: true });
+    node.addEventListener('touchmove', handleTouchMove, { passive: true });
+    node.addEventListener('touchend', handleTouchEnd, { passive: true });
     
-    container.addEventListener('mousedown', handleMouseDown);
-    container.addEventListener('mousemove', handleMouseMove);
-    container.addEventListener('mouseup', handleMouseUp);
-    container.addEventListener('mouseleave', handleMouseUp);
+    node.addEventListener('mousedown', handleMouseDown);
+    node.addEventListener('mousemove', handleMouseMove);
+    node.addEventListener('mouseup', handleMouseUp);
+    node.addEventListener('mouseleave', handleMouseUp);
     
-    container.addEventListener('wheel', handleWheel, { passive: true });
+    node.addEventListener('wheel', handleWheel, { passive: true });
 
-    let currentScrollLeft = container.scrollLeft;
+    let currentScrollLeft = node.scrollLeft;
 
     const scroll = () => {
-      if (!isInteracting && container) {
-        if (container.scrollWidth > container.clientWidth) {
+      if (!isInteracting && node) {
+        if (node.scrollWidth > node.clientWidth) {
           currentScrollLeft += scrollSpeed;
-          container.scrollLeft = Math.round(currentScrollLeft);
+          node.scrollLeft = Math.round(currentScrollLeft);
           
           // Loop back to start if we reach the end
-          if (container.scrollLeft >= container.scrollWidth - container.clientWidth - 1) {
-            container.scrollTo({ left: 0, behavior: 'smooth' });
+          if (node.scrollLeft >= node.scrollWidth - node.clientWidth - 1) {
+            node.scrollTo({ left: 0, behavior: 'smooth' });
             currentScrollLeft = 0; // Reset float tracker
             isInteracting = true;
             clearTimeout(resumeTimeoutId);
@@ -289,40 +297,38 @@ function useAutoScroll(isActive: boolean = true) {
             }, 1500); // Wait 1.5s for smooth scroll back to complete and settle
           }
         }
-      } else if (container) {
+      } else if (node) {
         // Sync our float tracker with actual scrollLeft when the user manually swipes/scrolls
-        currentScrollLeft = container.scrollLeft;
+        currentScrollLeft = node.scrollLeft;
       }
       animationFrameId = requestAnimationFrame(scroll);
     };
 
     animationFrameId = requestAnimationFrame(scroll);
 
-    return () => {
+    cleanupRef.current = () => {
       cancelAnimationFrame(animationFrameId);
       clearTimeout(resumeTimeoutId);
-      if (container) {
-        container.removeEventListener('touchstart', handleTouchStart);
-        container.removeEventListener('touchmove', handleTouchMove);
-        container.removeEventListener('touchend', handleTouchEnd);
-        
-        container.removeEventListener('mousedown', handleMouseDown);
-        container.removeEventListener('mousemove', handleMouseMove);
-        container.removeEventListener('mouseup', handleMouseUp);
-        container.removeEventListener('mouseleave', handleMouseUp);
-        
-        container.removeEventListener('wheel', handleWheel);
-      }
+      node.removeEventListener('touchstart', handleTouchStart);
+      node.removeEventListener('touchmove', handleTouchMove);
+      node.removeEventListener('touchend', handleTouchEnd);
+      
+      node.removeEventListener('mousedown', handleMouseDown);
+      node.removeEventListener('mousemove', handleMouseMove);
+      node.removeEventListener('mouseup', handleMouseUp);
+      node.removeEventListener('mouseleave', handleMouseUp);
+      
+      node.removeEventListener('wheel', handleWheel);
     };
-  }, [isActive]);
+  }, [isActive, ...dependencies]);
 
   return ref;
 }
 
 export default function App() {
-  const trendingScrollRef = useAutoScroll();
-  const freshScrollRef = useAutoScroll();
-  const flashScrollRef = useAutoScroll();
+  const trendingScrollRef = useAutoScroll(true, [activeProducts]);
+  const freshScrollRef = useAutoScroll(true, [activeProducts]);
+  const flashScrollRef = useAutoScroll(true, [activeProducts]);
   // Navigation 5 View Tabs: 'home' | 'categories' | 'deals' | 'account' | 'cart'
   const [activeTab, setActiveTab] = useState<'home' | 'categories' | 'deals' | 'account' | 'cart'>('home');
   const [showSplash, setShowSplash] = useState(true);
