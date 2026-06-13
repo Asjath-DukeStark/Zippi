@@ -156,7 +156,7 @@ const FLASH_IDS = [
   'fd_harpic'
 ];
 
-// Reusable hook for smooth horizontal scrolling container that pauses on interaction
+// Reusable hook for smooth horizontal scrolling container that pauses on horizontal interaction
 function useAutoScroll(isActive: boolean = true) {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -169,26 +169,77 @@ function useAutoScroll(isActive: boolean = true) {
     let animationFrameId: number;
     let resumeTimeoutId: any;
 
-    const handleInteractionStart = () => {
-      isInteracting = true;
-      clearTimeout(resumeTimeoutId);
+    // Touch tracking
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let hasDeterminedTouchDirection = false;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        hasDeterminedTouchDirection = false;
+      }
     };
 
-    const handleInteractionEnd = () => {
-      clearTimeout(resumeTimeoutId);
-      resumeTimeoutId = setTimeout(() => {
-        isInteracting = false;
-      }, 3000);
+    const handleTouchMove = (e: TouchEvent) => {
+      if (hasDeterminedTouchDirection || e.touches.length === 0) return;
+
+      const currentX = e.touches[0].clientX;
+      const currentY = e.touches[0].clientY;
+      const diffX = Math.abs(currentX - touchStartX);
+      const diffY = Math.abs(currentY - touchStartY);
+
+      // Use a threshold of 6px of motion to accurately identify horizontal swipe
+      if (diffX > 6 || diffY > 6) {
+        hasDeterminedTouchDirection = true;
+        if (diffX > diffY) {
+          // Horizontal gesture inside the track -> pause auto-scroll
+          isInteracting = true;
+          clearTimeout(resumeTimeoutId);
+        } else {
+          // Vertical swipe scrolling the page -> do NOT pause
+          isInteracting = false;
+        }
+      }
     };
 
-    container.addEventListener('touchstart', handleInteractionStart, { passive: true });
-    container.addEventListener('touchend', handleInteractionEnd, { passive: true });
-    container.addEventListener('mousedown', handleInteractionStart);
-    container.addEventListener('mouseup', handleInteractionEnd);
-    container.addEventListener('mouseleave', handleInteractionEnd);
-    container.addEventListener('wheel', handleInteractionStart, { passive: true });
+    const handleTouchEnd = () => {
+      if (isInteracting) {
+        clearTimeout(resumeTimeoutId);
+        resumeTimeoutId = setTimeout(() => {
+          isInteracting = false;
+        }, 3000);
+      }
+      hasDeterminedTouchDirection = false;
+    };
 
-    const handleScroll = () => {
+    // Mouse drag tracking (desktop)
+    let mouseStartX = 0;
+    let mouseStartY = 0;
+    let isMouseDown = false;
+
+    const handleMouseDown = (e: MouseEvent) => {
+      mouseStartX = e.clientX;
+      mouseStartY = e.clientY;
+      isMouseDown = true;
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isMouseDown) return;
+      const diffX = Math.abs(e.clientX - mouseStartX);
+      const diffY = Math.abs(e.clientY - mouseStartY);
+      
+      if (diffX > 6 || diffY > 6) {
+        if (diffX > diffY) {
+          isInteracting = true;
+          clearTimeout(resumeTimeoutId);
+        }
+      }
+    };
+
+    const handleMouseUp = () => {
+      isMouseDown = false;
       if (isInteracting) {
         clearTimeout(resumeTimeoutId);
         resumeTimeoutId = setTimeout(() => {
@@ -196,7 +247,28 @@ function useAutoScroll(isActive: boolean = true) {
         }, 3000);
       }
     };
-    container.addEventListener('scroll', handleScroll, { passive: true });
+
+    // Wheel/Trackpad horizontal scroll tracking
+    const handleWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+        isInteracting = true;
+        clearTimeout(resumeTimeoutId);
+        resumeTimeoutId = setTimeout(() => {
+          isInteracting = false;
+        }, 3000);
+      }
+    };
+
+    container.addEventListener('touchstart', handleTouchStart, { passive: true });
+    container.addEventListener('touchmove', handleTouchMove, { passive: true });
+    container.addEventListener('touchend', handleTouchEnd, { passive: true });
+    
+    container.addEventListener('mousedown', handleMouseDown);
+    container.addEventListener('mousemove', handleMouseMove);
+    container.addEventListener('mouseup', handleMouseUp);
+    container.addEventListener('mouseleave', handleMouseUp);
+    
+    container.addEventListener('wheel', handleWheel, { passive: true });
 
     const scroll = () => {
       if (!isInteracting && container) {
@@ -223,13 +295,16 @@ function useAutoScroll(isActive: boolean = true) {
       cancelAnimationFrame(animationFrameId);
       clearTimeout(resumeTimeoutId);
       if (container) {
-        container.removeEventListener('touchstart', handleInteractionStart);
-        container.removeEventListener('touchend', handleInteractionEnd);
-        container.removeEventListener('mousedown', handleInteractionStart);
-        container.removeEventListener('mouseup', handleInteractionEnd);
-        container.removeEventListener('mouseleave', handleInteractionEnd);
-        container.removeEventListener('wheel', handleInteractionStart);
-        container.removeEventListener('scroll', handleScroll);
+        container.removeEventListener('touchstart', handleTouchStart);
+        container.removeEventListener('touchmove', handleTouchMove);
+        container.removeEventListener('touchend', handleTouchEnd);
+        
+        container.removeEventListener('mousedown', handleMouseDown);
+        container.removeEventListener('mousemove', handleMouseMove);
+        container.removeEventListener('mouseup', handleMouseUp);
+        container.removeEventListener('mouseleave', handleMouseUp);
+        
+        container.removeEventListener('wheel', handleWheel);
       }
     };
   }, [isActive]);
