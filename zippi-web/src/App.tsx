@@ -1254,11 +1254,11 @@ export default function App() {
                         >
                           
                           {/* Category Image - top 70% of card */}
-                          <div className="w-full h-[65%] rounded-lg overflow-hidden bg-gray-50/50 flex items-center justify-center p-1 relative">
+                          <div className="w-full h-[65%] rounded-lg overflow-hidden bg-gray-50/50 flex items-center justify-center p-0 relative">
                             <img 
                               src={cat.imageUrl || 'https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=120&auto=format&fit=crop&q=80'} 
                               alt={cat.name} 
-                              className="object-contain w-full h-full max-h-[48px] transform hover:scale-110 transition-transform"
+                              className="object-cover w-full h-full transform hover:scale-110 transition-transform"
                               referrerPolicy="no-referrer"
                             />
                             {cat.icon && (
@@ -1522,7 +1522,7 @@ export default function App() {
                                 <img 
                                   src={cat.imageUrl || 'https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=150&auto=format&fit=crop&q=80'} 
                                   alt={cat.name} 
-                                  className="w-full h-full object-contain p-2.5 transition-transform duration-300 group-hover:scale-105" 
+                                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
                                   referrerPolicy="no-referrer"
                                 />
                               </div>
