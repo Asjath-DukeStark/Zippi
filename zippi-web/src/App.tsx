@@ -793,9 +793,17 @@ export default function App() {
   const bestsellerProducts = activeProducts.filter(p => p.popular);
   const freshTodayProducts = activeProducts.filter(p => p.category === 'veggies' || p.category === 'fruits' || p.category === 'dairy');
 
-  const trendingProductsList = TRENDING_IDS.map(id => activeProducts.find(p => p.id === id)).filter((p): p is Product => !!p);
-  const freshProductsList = FRESH_IDS.map(id => activeProducts.find(p => p.id === id)).filter((p): p is Product => !!p);
-  const flashProductsList = FLASH_IDS.map(id => activeProducts.find(p => p.id === id)).filter((p): p is Product => !!p);
+  const trendingProductsList = activeProducts.filter(p => p.popular).length > 0
+    ? activeProducts.filter(p => p.popular).slice(0, 10)
+    : TRENDING_IDS.map(id => activeProducts.find(p => p.id === id)).filter((p): p is Product => !!p);
+
+  const freshProductsList = activeProducts.filter(p => p.category === 'veggies' || p.category === 'fruits').length > 0
+    ? activeProducts.filter(p => p.category === 'veggies' || p.category === 'fruits').slice(0, 10)
+    : FRESH_IDS.map(id => activeProducts.find(p => p.id === id)).filter((p): p is Product => !!p);
+
+  const flashProductsList = activeProducts.filter(p => p.isFlashDeal).length > 0
+    ? activeProducts.filter(p => p.isFlashDeal).slice(0, 10)
+    : FLASH_IDS.map(id => activeProducts.find(p => p.id === id)).filter((p): p is Product => !!p);
 
   const cartTotalQty = cart.reduce((acc, i) => acc + i.quantity, 0);
   const cartSubtotal = cart.reduce((acc, i) => {
